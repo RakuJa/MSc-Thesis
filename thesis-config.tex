@@ -1,0 +1,110 @@
+\newcommand{\documentAuthor}{Daniele Giachetto}
+\newcommand{\documentTitle}{Dynamic Directional Modulation for Physical Layer Security: a Reinforcement Learning Approach}
+
+\newcommand{\myUni}{UNIVERSITY OF PISA}
+\newcommand{\myFaculty}{Master’s Degree in Cybersecurity}
+\newcommand{\myDepartment}{DEPARTMENT OF INFORMATION ENGINEERING}
+
+\newcommand{\firstSupervisorTitle}{Prof.}
+\newcommand{\firstSupervisorFullName}{Giacomo Bacci}
+\newcommand{\secondSupervisorTitle}{Prof.}
+\newcommand{\secondSupervisorFullName}{Marco Luise}
+\newcommand{\otherSupervisorTitle}{Dr.}
+\newcommand{\otherSupervisorFullName}{Irched Chafaa}
+
+\newcommand{\myLocation}{Pisa}
+\newcommand{\myAA}{2025-2026}
+\newcommand{\myTime}{July 2026}
+
+
+%**************************************************************
+% Pagination suggestions
+% see: https://didattica.di.unipi.it/images/didattica/wea18/DOC/Redazione-PresentazioneTesi.pdf
+%**************************************************************
+
+\setlength{\parindent}{14pt}   % larghezza rientro della prima riga
+\setlength{\parskip}{0pt}   % distanza tra i paragrafi
+
+
+\defbibheading{bibliography} {
+    \cleardoublepage
+    \phantomsection
+    \addcontentsline{toc}{chapter}{\bibname}
+    \chapter*{\bibname\markboth{\bibname}{\bibname}}
+}
+
+\setlength\bibitemsep{1.5\itemsep}
+
+
+\captionsetup{
+    tableposition=top,
+    figureposition=bottom,
+    font=small,
+    format=hang,
+    labelfont=bf
+}
+
+\input{glossario}
+\makeglossaries
+
+\graphicspath{{images/}}
+
+\hypersetup{
+    colorlinks=true,
+    linktocpage=true,
+    pdfstartpage=1,
+    pdfstartview=,
+    % to print in black/white
+    %colorlinks=false, linktocpage=false, pdfborder={0 0 0}, pdfstartpage=1, pdfstartview=FitV,
+    breaklinks=true,
+    pdfpagemode=UseNone,
+    pageanchor=true,
+    pdfpagemode=UseOutlines,
+    plainpages=false,
+    bookmarksnumbered,
+    bookmarksopen=true,
+    bookmarksopenlevel=1,
+    hypertexnames=true,
+    pdfhighlight=/O,
+    urlcolor=webbrown,
+    linkcolor=RoyalBlue,
+    citecolor=webgreen,
+}
+
+\renewcommand{\labelitemi}{$\ast$}
+%\renewcommand{\labelitemi}{$\bullet$}
+%\renewcommand{\labelitemii}{$\cdot$}
+%\renewcommand{\labelitemiii}{$\diamond$}
+%\renewcommand{\labelitemiv}{$\ast$}
+
+
+\renewcommand{\lstlistingname}{Listato}
+\lstset{
+    language=[LaTeX]Tex,%C++,
+    keywordstyle=\color{RoyalBlue}, %\bfseries,
+    basicstyle=\small\ttfamily,
+    language=Python,
+    commentstyle=\color{Green}\ttfamily,
+    stringstyle=\rmfamily,
+    numbers=none, %left,%
+    numberstyle=\scriptsize, %\tiny
+    stepnumber=5,
+    numbersep=8pt,
+    showstringspaces=false,
+    breaklines=true,
+    frameround=ftff,
+    frame=single
+}
+
+
+\definecolor{webgreen}{rgb}{0,.5,0}
+\definecolor{webbrown}{rgb}{.6,0,0}
+
+\newcommand{\omissis}{[\dots\negthinspace]}
+\newcommand{\intro}[1]{\emph{\textsf{#1}}}
+
+\newcommand{\sectionname}{Section}
+\newcommand{\subsectionname}{Subsection}
+\newcommand{\subsubsectionname}{Sub-subsection}
+\newcommand{\equationname}{Equation}
+\newcommand{\listingname}{Listing} 

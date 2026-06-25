@@ -1,0 +1,106 @@
+\begin{filecontents*}{\jobname.xmpdata}
+  \Title{Dynamic Directional Modulation for Physical Layer Security: a Reinforcement Learning Approach}
+  \Author{Daniele Giachetto}
+  \Language{eng-ENG}
+  \Subject{Improving security features of wireless communications for both civil and military applications has been a hot topic since the early days of radio science. One effective method is through physical (PHY) layer encryption, that can be achieved through the application of advanced electromagnetic signal processing techniques at both transmitting and receiving link-ends by using antenna arrays, possibly in a disjoint manner. Among others, directional modulation (DM) can be regarded as a promising technique, which uses antenna arrays as spatial encryption systems, to provide information confidentiality in the transmit direction, already at the PHY-layer. In this thesis, tools borrowed from machine learning and artificial intelligence will be used to optimize the system design in terms of scalability, computational complexity and robustness of the DM approach.}
+  \Keywords{Artificial Intelligence\sep Reinforcement Learning\sep Dynamic Directional Modulation \sep Physical-Layer Security}
+\end{filecontents*}
+
+\documentclass[10pt,
+               a4paper,
+               oneside,
+               openright,
+               english,
+               ]{book}
+
+
+\PassOptionsToPackage{dvipsnames}{xcolor} % colori PDF/A
+\usepackage{xcolor}
+
+\usepackage{colorprofiles}
+\usepackage{amsmath}
+\usepackage{bm}
+\usepackage{amssymb}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{placeins}
+\usepackage[a-2b,mathxmp]{pdfx}[2018/12/22] % PDF-A
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{bookmark}
+\usepackage{caption}
+\usepackage{chngpage,calc}
+\usepackage{csquotes}
+\usepackage{emptypage}
+\usepackage{epigraph}
+\usepackage{eurosym}
+%\usepackage{indentfirst}
+
+\usepackage{graphicx}
+\usepackage[binding=5mm]{layaureo}
+\usepackage{listings}
+\usepackage{microtype}
+\usepackage{mparhack,relsize}
+\usepackage{nameref}
+\usepackage[font=small]{quoting}
+\usepackage{subcaption}
+\usepackage[english]{varioref}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{ltxtable}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage{gensymb}
+
+\usepackage[acronym, toc, nonumberlist, shortcuts]{glossaries-extra}
+\setabbreviationstyle[acronym]{long-short}
+\renewcommand*{\glsfirstlongdefaultfont}[1]{#1}
+\renewcommand{\acronymname}{Glossary}
+
+\renewcommand*{\glslinkcheckfirsthyperhook}{%
+  \ifglsused{\glslabel}
+    {\setkeys{glslink}{hyper=false}}
+    {}
+}
+\newglossarystyle{nameparen}{%
+  \setglossarystyle{list}% base it on the list style
+  \renewcommand*{\glossentry}[2]{%
+    \item[]\textbf{\glsentrylong{##1} (\glsentryshort{##1})}%
+    \space \glossentrydesc{##1}\glspostdescription
+  }%
+  \renewcommand*{\subglossentry}[3]{}% no subentries needed here
+}
+
+\usepackage[backend=biber,style=ieee]{biblatex}
+\addbibresource{bibliography.bib}
+
+\input{thesis-config}
+
+\makeglossaries
+
+\begin{document}
+\frontmatter
+\input{intro-ending/frontispiece}
+\input{intro-ending/abstract}
+\input{intro-ending/acknowledgements}
+\input{intro-ending/index}
+\cleardoublepage
+
+
+\mainmatter
+\input{chapters/chapter-1}             % Introduction
+\input{chapters/chapter-2}             % Theoretical basis
+\input{chapters/chapter-3}             % Tools utilized to train the model, parameters chosen
+\input{chapters/chapter-4}             % Explain and compare methods to validate model
+\input{chapters/chapter-5}             % Show the data gathered and analyze it
+\input{chapters/chapter-6}             % Conclusions
+\appendix
+
+\glsaddall[types={main}]
+\printunsrtglossary[type=\acronymtype, style=nameparen]
+\backmatter
+\printbibliography
+\end{document}
