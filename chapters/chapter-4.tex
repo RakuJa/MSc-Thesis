@@ -4,13 +4,13 @@
 
 %**************************************************************
 \chapter{Validation}
+\label{cap:chapter4}
 
 \textcolor{magenta}{(I think it is a little bit unbalanced with respect to the other chapters. I would include it into the previous chapter. What do you think?}
 
 The validation of the model behavior is a critical process to distinguish between plausible but incorrect results and valid ones.
 In this work, validation is performed by comparing the simulated performance metrics with well-established theoretical results available in the literature. In particular, the\gls{BER} and\gls{SER} obtained through Monte Carlo simulations are evaluated against analytical expressions for M-\gls{PSK} modulation schemes over\gls{AWGN} channels, enabling the verification of both the quantitative accuracy of the results and the qualitative behavior of the system.
 Through this validation framework, the model is assessed not only in terms of performance evaluation but also in terms of its consistency with established communication theory, providing confidence in the results presented in \chaptername~\ref{cap:chapter5}.
-\label{cap:chapter4}
 %**************************************************************
 
 %**************************************************************
@@ -75,6 +75,7 @@ In this work, gray mapping is utilized for all considered modulation schemes, en
 
 
 \section{Theoretical M-PSK performance}
+\label{sec:theoretical_mpsk}
 
 For $M$-\gls{PSK} modulation over an\gls{AWGN} channel, the theoretical symbol error rate is:
 \begin{equation}
@@ -86,12 +87,44 @@ where $Q(x) = \frac{1}{2}\,\mathrm{erfc}\!\left(x/\sqrt{2}\right)$ is the Q-func
     \label{eq:ber_bpsk}
     \mathrm{BER}(E_b/N_0) = Q\!\left(\sqrt{2\,\frac{E_b}{N_0}}\right)
 \end{equation}
-Combining Equation~\eqref{eq:ser_mpsk} with the Gray-coded\gls{BER} approximation of Equation~\eqref{eq:ber_ser_relation} and substituting $E_s/N_0 = \log_2\!M \cdot E_b/N_0$ yields the theoretical\gls{BER} as a function of $E_b/N_0$ for $M \geq 4$:
+Combining \equationname~\eqref{eq:ser_mpsk} with the Gray-coded\gls{BER} approximation of \equationname~\eqref{eq:ber_ser_relation} and substituting $E_s/N_0 = \log_2\!M \cdot E_b/N_0$ yields the theoretical\gls{BER} as a function of $E_b/N_0$ for $M \geq 4$:
 \begin{equation}
     \label{eq:ber_mpsk}
     \mathrm{BER}(E_b/N_0) \approx \frac{2}{\log_2 M}\,Q\!\left(\sqrt{2\,\log_2\!M\cdot\frac{E_b}{N_0}}\,\sin\frac{\pi}{M}\right)
 \end{equation}
 These expressions serve as the analytical reference against which the Monte Carlo simulation results are compared in \chaptername~\ref{cap:chapter5}.
+
+\section{M-PSK performance under a static phase offset}
+\label{sec:ber_phase_offset}
+
+The eavesdropper-directed reward terms of \chaptername~\ref{cap:chapter3} require the\gls{BER} experienced by a receiver whose decision regions are rotated by a static phase offset $\theta_e$ relative to the legitimate receiver, since the array response generally has a different phase at an eavesdropper direction $\varphi_e$ than at the target direction $\varphi^\star$. This section extends \equationname~\eqref{eq:ser_mpsk}--\eqref{eq:ber_mpsk} of \sectionname~\ref{sec:theoretical_mpsk} to this case.
+
+Because the $M$-\gls{PSK} constellation is invariant under rotations of $2\pi/M$, and the decision regions are symmetric about each constellation point, any phase offset $\theta_e$ can be folded into an equivalent offset
+\begin{equation}
+    \delta = \min\!\left(\theta_e \bmod \frac{2\pi}{M},\;\; \frac{2\pi}{M} - \left(\theta_e \bmod \frac{2\pi}{M}\right)\right) \in \left[0,\, \frac{\pi}{M}\right]
+    \label{eq:phase_offset_fold}
+\end{equation}
+measuring the distance of the rotated symbol from its nearest decision boundary (located at $\pm\pi/M$ from the symbol's nominal phase).
+
+For $M = 2$, the classical result for a phase synchronization error applies directly: the signal's projection onto the decision axis is scaled by $\cos\delta$, giving
+\begin{equation}
+    \mathrm{BER}(E_b/N_0, \theta_e) = Q\!\left(\sqrt{2\,\frac{E_b}{N_0}}\,\cos\delta\right).
+    \label{eq:ber_bpsk_phase_offset}
+\end{equation}
+
+For $M \geq 4$, the offset symbol sits closer to one of its two neighbouring boundaries than the other, so the two-sided nearest-neighbour approximation of \equationname~\eqref{eq:ser_mpsk} splits into two distinct terms, one per boundary:
+\begin{align}
+    \mathrm{SER}(E_s/N_0, \theta_e) \approx{} & Q\!\left(\sqrt{2\,\frac{E_s}{N_0}}\,\sin\!\Big(\max\big(\tfrac{\pi}{M} - \delta,\, 0\big)\Big)\right) \notag \\
+    & {}+ Q\!\left(\sqrt{2\,\frac{E_s}{N_0}}\,\sin\!\left(\frac{\pi}{M} + \delta\right)\right)
+    \label{eq:ser_mpsk_phase_offset}
+\end{align}
+where clamping the first argument at $0$ once $\delta \geq \pi/M$ (i.e.\ once the offset symbol has crossed the near boundary) saturates that term at its maximal value $Q(0) = 0.5$ rather than leaving it undefined. Combining \equationname~\eqref{eq:ser_mpsk_phase_offset} with the Gray-coded approximation of \equationname~\eqref{eq:ber_ser_relation} gives the\gls{BER} used for the eavesdropper reward terms of \chaptername~\ref{cap:chapter3}:
+\begin{align}
+    \mathrm{BER}(E_b/N_0, \theta_e) \approx{} & \frac{1}{\log_2 M}\Bigg[Q\!\left(\sqrt{2\log_2\!M\cdot\frac{E_b}{N_0}}\,\sin\!\Big(\max\big(\tfrac{\pi}{M}-\delta,\,0\big)\Big)\right) \notag \\
+    & {}+ Q\!\left(\sqrt{2\log_2\!M\cdot\frac{E_b}{N_0}}\,\sin\!\left(\frac{\pi}{M}+\delta\right)\right)\Bigg]
+    \label{eq:ber_mpsk_phase_offset}
+\end{align}
+clipped to $[0, 0.5]$ to remain a valid probability. As a sanity check, setting $\theta_e = 0$ (hence $\delta = 0$) collapses \equationname~\eqref{eq:ser_mpsk_phase_offset} to $2\,Q\!\left(\sqrt{2E_s/N_0}\sin(\pi/M)\right)$, recovering exactly \equationname~\eqref{eq:ser_mpsk}.
 
 \section{Monte Carlo simulation}
 
