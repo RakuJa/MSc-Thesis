@@ -15,7 +15,7 @@ To ensure reproducibility of our experiments, this section details the hardware 
 
 \subsection{Programming language}
 
-Given the field and scope of the problem, the Python programming language has been chosen because of the wealth of\gls{AI} research carried out in the language and the consequently established ecosystem of scientific libraries developed.  It is also a more well-know language in the scientific literature for future peer review and improvements.
+Given the field and scope of the problem, the Python programming language has been chosen because of the wealth of\gls{AI} research carried out in the language and the consequently established ecosystem of scientific libraries developed. It is also a well-known language in the scientific literature, easing future peer review and improvements.
 
 \subsection{Development tools}
 
@@ -119,14 +119,11 @@ GPU & Nvidia RTX 4090 \\
 \end{longtable}
 
 \section{Environment}
-{\color{blue}I: Here you are explaining the principle of RL. You are not really describing your environment}
-In this reinforcement-learning model, the agent is connected to its environment, and at each step of interaction the agent receives as input, \textit{i}, some indication of the current state, \textit{s}, of the environment; the agent then chooses an action, \textit{a}, to generate as output. The value of the action is calculated through a reward function, \textit{R}, and the behavior of the agent, \textit{B}, choosing actions that tend to increase the long-term sum of values \cite{kaelbling1996rl}. It learns over time by systematic trial and error, guided by an algorithm. 
-
+Formally, the environment is specified by the tuple $(\mathcal{S}, \mathcal{A}, r, \text{transition})$: the state and action spaces, the reward function, and the (here single-step) transition dynamics, instantiated for the\gls{ULA}-based\gls{DDM} problem of\sectionname~\ref{sec:system_model}. \sectionname~\ref{sec:reinforcement_learning} introduced the contextual-bandit formulation in general terms; this section defines each component concretely, beginning with the angle sampling strategy used to train across the full azimuth range.
 
 
 \subsection{Training angles and sampling strategy}
-{\color{blue}I: This first sentence is not clear to me}
-In our\gls{ULA}-based DDM context, there are difficulties related to angle-dependent constraints and also sin-space sampling biases. 
+Training a single policy across the full azimuth range $[-90^\circ, 90^\circ]$ exposes two compounding difficulties: the\gls{DDM} validity constraint is intrinsically harder to satisfy near broadside than near endfire (\subsectionname~\ref{subsec:angle_dependant_constraint}), and naively sampling angles uniformly in $\varphi$ under-represents broadside in the spatial-frequency variable that actually governs the array response (\subsectionname~\ref{subsec:sin-space_sampling_bias}).
 
 \subsubsection{The Spatial Frequency Domain of a ULA}
 
@@ -159,7 +156,7 @@ where $\varepsilon_p = 10\degree$ is the phase tolerance. Note that $\varepsilon
     \Delta u(\varphi^*) = |\sin(\varphi^* + \delta\varphi) - \sin(\varphi^* - \delta\varphi)| = 2\cos\varphi^*\sin(\delta\varphi)
 \end{equation}
 This width is maximised at broadside and collapses toward zero at endfire, meaning that the feasible set of valid steering vectors is smallest at broadside. \figurename~\ref{fig:sampling_constraint_bandwidth} plots $\Delta u(\varphi^*)$ for the system under study: the constraint window spans $\Delta u = 0.174$ at $\varphi^* = 0\degree$ and only $\Delta u = 0.087$ at $\varphi^* = 60\degree$: exactly half as wide.
-The array response $f(u)$ is a degree polynomial $(N-1) = 4$ in $z = e^{j\pi u}$; As $u$ sweeps across the constraint window, $z$ traces an arc of the unit circle in the complex plane. By the argument principle, any zero of $f$ that lies near this arc induces a rapid phase swing across the corresponding range of $u$: for the phase to remain within $\pm\varepsilon_p$ throughout the window, all four polynomial zeros must be kept well away from the constraint arc. The arc subtends an angle of $\pi\Delta u(\varphi^*)$ radians:
+The array response $f(u)$ is a degree-$(N-1) = 4$ polynomial in $z = e^{j\pi u}$. As $u$ sweeps across the constraint window, $z$ traces an arc of the unit circle in the complex plane. By the argument principle, any zero of $f$ that lies near this arc induces a rapid phase swing across the corresponding range of $u$: for the phase to remain within $\pm\varepsilon_p$ throughout the window, all four polynomial zeros must be kept well away from the constraint arc. The arc subtends an angle of $\pi\Delta u(\varphi^*)$ radians:
 \begin{align}
     \varphi^*=0\degree&:\quad \pi \times 0.174 \approx 0.55\;\text{rad}\;(\approx 31\degree\;\text{of arc}) \\
     \varphi^*=60\degree&:\quad \pi \times 0.087 \approx 0.27\;\text{rad}\;(\approx 16\degree\;\text{of arc}) \\
@@ -208,7 +205,7 @@ Since the\gls{DFT} solution maximises the inner product between the steering vec
 
 \subsubsection{The Sin-Space Sampling Bias}
 \label{subsec:sin-space_sampling_bias}
-The constraint difficulty described in \subsectionname~\ref{subsec:angle_dependant_constraint} is an intrinsic property of the\gls{ULA} geometry that can be exacerbated or alleviated by the chosen sampling strategy. 
+The constraint difficulty described in \sectionname~\ref{subsec:angle_dependant_constraint} is an intrinsic property of the\gls{ULA} geometry that can be exacerbated or alleviated by the chosen sampling strategy.
 Training angle sets are most naturally specified in degrees of azimuth: $\varphi \in \{-90\degree, -89\degree, \ldots, +90\degree\}$, a set of 181 angles uniformly spaced in $\varphi$. The Jacobian of the mapping $u = \sin\varphi$ is $du/d\varphi = \cos\varphi$, so equal angular steps $\Delta\varphi$ correspond to unequal $u$-space displacements:
 \begin{equation}
     \Delta u \approx \cos\varphi^* \cdot \Delta\varphi
@@ -226,7 +223,7 @@ Concretely, with 181 uniform-in-$\varphi$ angles: the endfire neighbourhood $|\v
 
 \subsubsection{Compound Effect and Adopted Sampling Strategy}
 
-The physical difficulty \subsectionname~\ref{subsec:angle_dependant_constraint} and the sampling bias \subsectionname~\ref{subsec:sin-space_sampling_bias} are independent mechanisms, but they can combine adversarially.
+The physical difficulty \sectionname~\ref{subsec:angle_dependant_constraint} and the sampling bias \sectionname~\ref{subsec:sin-space_sampling_bias} are independent mechanisms, but they can combine adversarially.
 The physical difficulty means that each broadside episode is unlikely to yield a valid solution easily, so the policy needs many broadside episodes to accumulate enough successful exploration to converge on the valid cluster while the sampling bias simultaneously ensures that broadside receives the fewest episodes per unit of $u$-space: precisely the region that most needs a large exploration budget. Meanwhile, endfire receives the most episodes per $u$-space unit despite needing the least: the feasible set is large, the\gls{DFT} solution is already valid for $|\varphi^*| > 71\degree$, and the policy consolidates endfire performance quickly resulting in abundant valid rewards from endfire dominating the policy gradient leading to reinforcing strategies that work at endfire. These same strategies do not transfer to broadside as the valid solutions occupy a structurally different, concentrated cluster in steering vector space and because broadside episodes are infrequent, the corrective signal from broadside failures is too sparse to drive the policy toward the correct region.\\
 Sampling training angles uniformly in $u = \sin\varphi$ and mapping back via $\varphi = \arcsin(u)$, produces the flat distribution shown in red in \figurename~\ref{fig:sampling_density}. This corrects the secondary cause: it equalises exploration budget across all spatial frequencies, shifting episodes away from the already mastered endfire region and toward the underexplored broadside region.
 Addressing the physical difficulty, instead, requires an exploration regime capable of navigating a high-dimensional parameter space toward a geometrically concentrated feasible set and\gls{CL} provides a principled mechanism: the agent first builds intuition for what valid solutions look like at broadside angles, then transfers and refines that understanding as the constraint tightens and finally the target angles expand to the desired $[-90\degree, 90\degree]$.
@@ -268,7 +265,7 @@ This symmetric normalization keeps the action distribution centered around zero,
     \label{fig:network_output_mapping}
 \end{figure}
 \FloatBarrier
-An alternative physics-informed residual parameterisation, in which the action encodes corrections to the\gls{DFT} steering vector rather than absolute phases, is evaluated in \subsectionname~\ref{subsec:physics_informed} and visualized in \figurename~\ref{fig:physics_informed_network_output_mapping}.
+An alternative physics-informed residual parameterisation, in which the action encodes corrections to the\gls{DFT} steering vector rather than absolute phases, is evaluated in \sectionname~\ref{subsec:physics_informed} and visualized in \figurename~\ref{fig:physics_informed_network_output_mapping}.
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.75\textwidth]{images/chapter3/physics_informed_mapping.pdf}
@@ -278,14 +275,14 @@ An alternative physics-informed residual parameterisation, in which the action e
 
 \subsubsection{Transition Function}
 
-The environment is formulated as a \textit{contextual bandit}, meaning that every episode consists of exactly one interaction step; At the beginning of each episode, a target angle $\varphi$ is sampled uniformly at random from the discrete set of training angles $\varphi_{\text{train}}$:
+The environment is formulated as a \textit{contextual bandit}, meaning that every episode consists of exactly one interaction step. At the beginning of each episode, a target angle $\varphi$ is sampled uniformly at random from the discrete set of training angles $\varphi_{\text{train}}$:
 
 \begin{equation}
     \varphi \sim \mathcal{U}(\varphi_{\text{train}})
 \end{equation}
 The agent observes the encoding $\mathbf{s} = [\cos\varphi, \sin\varphi, \rho_c]$, produces a single action $\mathbf{a}$, receives a scalar reward $r$, and the episode terminates immediately with \texttt{terminated = True}. There is no temporal state transition; the next state is irrelevant, since the episode ends after each step.\\
 This bandit formulation is a deliberate and central architectural choice: the optimal beamforming configuration for a given $\varphi$ is stateless since it does not depend on any history of prior actions, and there is no sequential decision process to unroll. Casting the problem as a bandit therefore removes a layer of complexity that would otherwise be artificial, eliminates the credit assignment problem across time steps, and allows the agent to receive an immediate and unambiguous reward signal for every configuration it proposes. \\
-Generalization across angles is achieved by randomizing $\varphi$ at each reset, forcing the policy to learn a direct mapping from angle encoding to beamforming configuration rather than momorizing a fixed solution for a single direction.
+Generalization across angles is achieved by randomizing $\varphi$ at each reset, forcing the policy to learn a direct mapping from angle encoding to beamforming configuration rather than memorizing a fixed solution for a single direction.
 \subsubsection{Reward Function}
 The reward signal $r$ is a composite of four tiers designed to guide the agent progressively from geometrically valid beam shapes toward configurations that jointly maximise the\gls{BER} performance of the legitimate receiver and the decoding difficulty for potential eavesdroppers. The design directly optimises communication and\gls{PLS} metrics rather than relying on beam geometry alone to imply them.
 
@@ -331,7 +328,7 @@ A positive gap indicates that eavesdroppers on average experience a higher error
 \begin{equation}
     r_{\text{sec}} = 5\,\max(0,\, \Delta B)
 \end{equation}
-Only positive gaps are rewarded before validity is confirmed, so early exploration is not penalised for failing to achieve secrecy before the beam shape itself is geometrically valid.
+Only positive gaps are rewarded before validity is confirmed, so early exploration is not penalised for failing to achieve secrecy before the beam shape itself is geometrically valid. When the array gain at the target direction falls below $|f^*| < 0.05$, the secrecy terms are skipped and default to a neutral value ($\bar{B}_e = 0$, $B_{e,\min} = 0.5$), avoiding ill-conditioned\gls{BER} estimates at near-zero gain.
 
 \subsubsection{Validity bonus and secrecy penalties.}
 When the hard validity check passes, a structured validity bonus reinforces secrecy objectives:
@@ -340,7 +337,7 @@ When the hard validity check passes, a structured validity bonus reinforces secr
 \end{equation}
 where:
 \begin{itemize}
-    \item $w_\varphi = 1 + |\cos\varphi| \in [1, 2]$ is an angle-dependent weight that assigns double credit to broadside solutions, compensating for the structural difficulty at $\varphi \approx 0^\circ$ described in \subsectionname~\ref{subsec:angle_dependant_constraint}.
+    \item $w_\varphi = 1 + |\cos\varphi| \in [1, 2]$ is an angle-dependent weight that assigns double credit to broadside solutions, compensating for the structural difficulty at $\varphi \approx 0^\circ$ described in \sectionname~\ref{subsec:angle_dependant_constraint}.
     \item $\Delta B_{\min} = B_{e,\min} - B_{\text{legit}}$ is the worst-case secrecy gap, where $B_{e,\min}$ is the minimum\gls{BER} across all eavesdropper angles (the easiest-to-decode adversary). The weight is $w_{\text{wc}} = 80$ if $\Delta B_{\min} < 0$ and $w_{\text{wc}} = 50$ otherwise, imposing a stronger penalty when the worst-case eavesdropper outperforms the legitimate receiver.
     \item $f_{\text{low}}$ is the fraction of eavesdropper angles with $B_e < 0.1$, penalising solutions that leave a large proportion of the angular space trivially decodable.
     \item The $15|f^*|$ term provides a gradient, pushing the array gain above the constraint floor toward maximum coherent gain; the\gls{BER} score saturates at $w_{\text{ber}}$ for any valid configuration at training\gls{SNR}, making this term the sole remaining gradient for increasing gain once validity is achieved.
@@ -356,7 +353,7 @@ with any non-finite value replaced by $r = -1$ to guard against numerical instab
 
 \subsubsection{Curriculum Learning}
 \label{subsubsec:curriculum_learning}
-Training a policy directly against the final, tightest physical constraints and the full angular range from the first iteration is inefficient as shown in \subsectionname\ref{subsec:curriculum_flattened}: the feasible region is small, the\gls{BER} and secrecy rewards are rarely triggered, and the reward landscape is nearly flat for most of the early training budget. A structured curriculum therefore progressively tightens the constraints and expands the range of training angles as training advances \cite{bengio2009curriculum}. Two independent progress scalars govern the curriculum:
+Training a policy directly against the final, tightest physical constraints and the full angular range from the first iteration is inefficient as shown in \subsectionname~\ref{subsec:curriculum_flattened}: the feasible region is small, the\gls{BER} and secrecy rewards are rarely triggered, and the reward landscape is nearly flat for most of the early training budget. A structured curriculum therefore progressively tightens the constraints and expands the range of training angles as training advances \cite{bengio2009curriculum}. Two independent progress scalars govern the curriculum:
 \begin{equation}
     \rho_c = \min\!\left(\frac{t}{T \cdot r_c},\, 1\right), \qquad
     \rho = \min\!\left(\frac{t}{T \cdot r_s},\, 1\right)
@@ -401,7 +398,7 @@ During the expansion phase, sampling is biased toward the broadside region $|\va
 \begin{center}
 \begin{tabular}{cccc}
 \hline
-Stage & Timestep range & $P(\text{region A})$ & $P(\text{region A})$ \\
+Stage & Timestep range & $P(\text{region A})$ & $P(\text{region B})$ \\
 \hline
 1 & $[\phantom{0}7\%,\; 38\%]\,T$ & $80\%$ & $20\%$ \\
 2 & $[38\%,\; 69\%]\,T$ & $60\%$ & $40\%$ \\
