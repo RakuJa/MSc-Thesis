@@ -26,7 +26,7 @@ The clip range $\varepsilon$ is the central stability mechanism of\gls{PPO}, bou
 where $r_t(\theta) = \pi_\theta(a_t | s_t)/ \pi_{\theta_\mathrm{old}}(a_t | s_t)$. The clip range remained fixed at the default value of $\varepsilon = 0.2$ throughout training, as recommended by Schulman et al.~\cite{schulman2017ppo}. Its stability confirms that no adaptive clipping schedule was applied, and that the constraint was enforced uniformly across all gradient updates. 
 
 \subsubsection{Learning rate}
-The learning rate controls the step size of the Adam optimiser when updating the network weights. Training begins at $\alpha_{max} = 3 \times 10^{-4}$ and decays by a factor of $\delta = 0.998$ at the end of every rollout, down to a minimum of $\alpha_{min} = 1 \times 10^{-4}$. This slow decay lowers the effective step size as the policy matures, reducing the risk of overshooting near convergence. Once the curriculum reaches full constraint enforcement, the schedule addictionally monitors two instability signals over a sliding window of $W = 30$ rollouts:
+The learning rate controls the step size of the Adam optimiser when updating the network weights. Training begins at $\alpha_{max} = 3 \times 10^{-4}$ and decays by a factor of $\delta = 0.998$ at the end of every rollout, down to a minimum of $\alpha_{min} = 1 \times 10^{-4}$. This slow decay lowers the effective step size as the policy matures, reducing the risk of overshooting near convergence. Once the curriculum reaches full constraint enforcement, the schedule additionally monitors two instability signals over a sliding window of $W = 30$ rollouts:
 \begin{enumerate}
     \item \textbf{reward drop detector:} if the most recent rollout mean reward falls more than $5\%$ below the window peak, a ramp is triggered;
     \item \textbf{validity crash detector:} if the fraction of rollouts that satisfy the constraints collapses to less than half of the window peak, a ramp is triggered.
@@ -51,10 +51,10 @@ The approximate KL divergence measures how much the new policy has shifted from 
 \begin{equation}
     \widehat{D}_{\mathrm{KL}} \approx \mathbb{E}_t \left[ \log \frac{\pi_{\theta_\mathrm{old}}(a_t | s_t)}{\pi_\theta(a_t | s_t)} \right]
 \end{equation}
-The approximate KL divergence begins at approximately $0.03$ at the start of training, decreases steadily, and increases to $0.03$ at the end of the run. The rapid decay and subsequent stability confirm that the clip range constraint ($\varepsilon = 0.2$) was effective in preventing excessively large policy updates. 
+The approximate KL divergence begins at approximately $0.027$, drops to a minimum of about $0.01$ within the first $1$-$2$ million timesteps, then rises and stabilises around $0.035$-$0.04$ for the remainder of training, consistently staying below the $0.05$ KL threshold marked in the figure. This sustained margin confirms that the clip range constraint ($\varepsilon = 0.2$) was effective in preventing excessively large policy updates throughout training.
 
 \subsubsection{Clip Fraction}
-The clip fraction reports the proportion of samples in each rollout batch for which the probability ratio $r_t(\theta) = \pi_\theta(a_t | s_t) / \pi_{\theta_\mathrm{old}}(a_t|s_t)$ exceeded the clip boundary, i.e. fell outside the interval $[1 - \varepsilon,\,1]$. The clip fraction starts at approximately $0.2$ in the early stages of training and then increases, stabilising around $0.30$ for the rest of the run; The elevated values at the end suggests that the policy was undergoing substantial changes in the first updates, consistent with the high approximate KL divergence observed at the same time. As training progresses, the clip fraction settles into a healthy range, indicating that only a moderate proportion of samples were actively constrained by the clipping mechanism. 
+The clip fraction reports the proportion of samples in each rollout batch for which the probability ratio $r_t(\theta) = \pi_\theta(a_t | s_t) / \pi_{\theta_\mathrm{old}}(a_t|s_t)$ exceeded the clip boundary, i.e. fell outside the interval $[1 - \varepsilon,\,1 + \varepsilon]$. The clip fraction starts at approximately $0.22$, dips to about $0.12$-$0.15$ over the same early window in which the approximate KL divergence dips, then rises and stabilises around $0.29$--$0.30$ for the remainder of training. This sustained, moderate clip fraction indicates that the policy continued to make non-trivial but non-destructive updates throughout training, mirroring the approximate KL divergence's rise to a stable plateau, rather than collapsing prematurely to a frozen, near-deterministic policy.
 
 \subsubsection{Explained Variance}
 The explained variance quantifies how accurately the value function $V_\theta(s)$ predicts the empirical returns collected during rollouts:
@@ -62,7 +62,7 @@ The explained variance quantifies how accurately the value function $V_\theta(s)
 \begin{equation}
     \mathrm{EV} = 1 - \frac{\mathrm{Var}(y - \hat{y})}{\mathrm{Var}(y)}
 \end{equation}
-where $y$ denotes the observed returns and $\hat{y}$ the value function predictions. A value of $1$ corresponds to perfect prediction, while values near $0$ or below indicate that the critic is no better than a constant baseline; The explained variance increases progressively towards $0.9$ over the course of training, demonstrating that the critic successfully learned to approximate the value landscape of the task.
+where $y$ denotes the observed returns and $\hat{y}$ the value function predictions. A value of $1$ corresponds to perfect prediction, while values near $0$ or below indicate that the critic is no better than a constant baseline. The explained variance increases progressively towards $0.9$ over the course of training, demonstrating that the critic successfully learned to approximate the value landscape of the task.
 
 \begin{figure}[htbp]
     \centering
@@ -95,14 +95,14 @@ The core actor loss measures how well the policy is being pushed toward higher-a
 \end{equation}
 where the negative sign arises because gradient descent is used to maximise expected reward. The clipping embedded in this objective is what distinguishes\gls{PPO} from vanilla policy gradient methods, and directly reflects whether policy updates are aligned with the advantage estimates~\cite{schulman2017ppo}. During healthy training this loss should remain small because large values indicate that updates are too aggressive.
 
-\subsection{Value Loss}
+\subsubsection{Value Loss}
 The critic loss measures how accurately the value function predicts empirical returns, formulated as mean squared error between predicted state values and target returns:
 \begin{equation}
     L^{\mathrm{VF}} = \mathbb{E}_t \left[ \left( V_\theta(s_t) - V_t^{\mathrm{target}} \right)^2 \right]
 \end{equation}
 This term is scaled by a coefficient $c_1$ before being added to the total loss, since an unscaled value loss would otherwise dominate the gradient signal. A higher value loss early in training is acceptable as long as it decreases as the critic learns since persistent high values would keep advantage estimates noisy and destabilise the actor.
 
-\subsection{Entropy Loss}
+\subsubsection{Entropy Loss}
 The entropy loss measures the randomness of the policy's action distribution:
 
 \begin{equation}
@@ -110,12 +110,13 @@ The entropy loss measures the randomness of the policy's action distribution:
 \end{equation}
 A high-entropy policy is more exploratory, while a low-entropy policy is more deterministic. The entropy loss should gradually decrease over training as the policy becomes more confident.
 
-\subsection{Total Loss}
+\subsubsection{Total Loss}
 
 All three components are combined into a single scalar objective minimized by the Adam optimizer at each gradient step:
 \begin{equation}
-    L^{\mathrm{TOTAL}} = L^{\mathrm{PG}} + c_1 \cdot L^{\mathrm{VF}} - c_2 \cdot L^{\mathrm{ENT}}
+    L^{\mathrm{TOTAL}} = L^{\mathrm{PG}} + c_1 \cdot L^{\mathrm{VF}} + c_2 \cdot L^{\mathrm{ENT}}
 \end{equation}
+Since $L^{\mathrm{ENT}} = -\mathbb{E}_t[H(\pi_\theta)]$ is itself non-positive, adding it (rather than subtracting it) is what rewards higher-entropy policies with a lower total loss, implementing the entropy bonus that encourages exploration.
 
 As visualized in \figurename~\ref{fig:training_losses}, our losses behave in an ideal manner with values near $0$ at the end of the training.
 
@@ -152,7 +153,7 @@ As visualized in \figurename~\ref{fig:training_losses}, our losses behave in an 
 
 \subsection{Training Overview}
 
-\figurename~\ref{fig:training_overview} provides a concise four-panel summary of key training metrics: mean episode reward, valid-action rate, legitimate user\gls{BER}. and secrecy\gls{BER}.
+\figurename~\ref{fig:training_overview} provides a concise four-panel summary of key training metrics: mean episode reward, valid-action rate, legitimate user\gls{BER}, and secrecy\gls{BER}.
 
 \begin{figure}[htbp]
     \centering
@@ -194,7 +195,7 @@ The sole systematic deviation from perfect diversity is a mild concentration of 
 \subsubsection{Bit Error Rate \& Symbol Error Rate}
 
 \figurename~\ref{fig:model_ber_ser_ebn0} presents the\gls{SER} and\gls{BER} curves obtained for $M$-\gls{PSK} modulation orders $M \in \{2, 4, 8, 16\}$, at target angle $\varphi = 30\degree$ with a $N = 5$ element\gls{ULA}. For each modulation order, $K = 5$ stochastic beamforming configurations are sampled from the trained policy, producing the thin solid curves, whose spread directly reflects the diversity of valid solutions explored by the agent. The dashed curves represent the theoretical baseline assuming a perfect array gain equal to $N$, serving as an upper bound on achievable performance.\\
-Two observations are immediate. First, the simulated curves are consistently shifted to the right of their theoretical counterparts across all modulation orders; This gap is a direct consequence of the stochastic beamforming policy: unlike a deterministic matched filter, the sampled configurations do not maximize array gain at every draw, instead trading peak performance for solution diversity and secrecy. Second, the spread among the $K=5$ curves per modulation order is non-negligible, particularly for higher $M$, confirming that distinct stochastic samples produce meaningfully different received $E_b/N_0$ conditions.\\
+Two observations are immediate. First, the simulated curves are consistently shifted to the right of their theoretical counterparts across all modulation orders. This gap is a direct consequence of the stochastic beamforming policy: unlike a deterministic matched filter, the sampled configurations do not maximize array gain at every draw, instead trading peak performance for solution diversity and secrecy. Second, the spread among the $K=5$ curves per modulation order is non-negligible, particularly for higher $M$, confirming that distinct stochastic samples produce meaningfully different received $E_b/N_0$ conditions.\\
 These results should be interpreted in the context of the present work's primary objective. The proposed framework is not intended as a production-ready beamformer optimized for link budget, but as a foundational demonstration that a\gls{RL} agent can learn to navigate the directional modulation solution manifold and produce valid, diverse configurations.
 
 \begin{figure}[htbp]
@@ -224,7 +225,7 @@ These results establish a clear operating boundary for the proposed beamforming 
 
 \subsubsection{SER vs.\ Angle}
 
-\figurename~\ref{fig:ser_vs_angle} shows the\gls{SER} as a function of azimuth angle at a fixed $E_s/N_0 = 10$~dB, with the legitimate user steered to $\varphi = 30\degree$. A well-trained beamforming policy should maintain low error rates in the targeted direction while exhibiting high error rates elsewhere, indicating signal distortion outside the intended direction. In our plot it can be observed that the best angle for eavesdroppers are those that are physically near the legittimate receiver and the further away the eavesdropper is, the greater the error rate.
+\figurename~\ref{fig:ser_vs_angle} shows the\gls{SER} as a function of azimuth angle at a fixed $E_s/N_0 = 10$~dB, with the legitimate user steered to $\varphi = 30\degree$. A well-trained beamforming policy should maintain low error rates in the targeted direction while exhibiting high error rates elsewhere, indicating signal distortion outside the intended direction. In our plot it can be observed that the best angles for eavesdroppers are those that are physically near the legitimate receiver, and the further away the eavesdropper is, the greater the error rate.
 
 \begin{figure}[htbp]
     \centering
@@ -257,10 +258,10 @@ These results establish a clear operating boundary for the proposed beamforming 
 \FloatBarrier
 
 %**************************************************************
-\section{Comparison with Random Search}
+\section{Comparison with Random Search and CEM}
 \label{sec:benchmark}
 
-This section benchmarks the trained\gls{PPO} model against a two baselines:
+This section benchmarks the trained\gls{PPO} model against two baselines:
 \begin{itemize}
     \item a naive random phase search;
     \item\gls{CEM}, a population-based stochastic optimization approach.
@@ -269,7 +270,7 @@ For each azimuth angle $\varphi \in [-90\degree, 90\degree]$, all three methods 
 
 \subsection{Sample Efficiency}
 
-\figurename~\ref{fig:benchmark_efficiency} compares the three methods in terms of the number of candidates evaluated before a valid solution is found (left panel) and the success rate across angles (right panel). Solid lines report the median number of tries, with shaded bands covering the 25th--75th percentile range across independent repetitions. The\gls{PPO} model requires substantially fewer candidates to find a valid configuration at most angles.\gls{CEM} improves on naive random search by adapting its sampling distribution over successive generations, but still requires considerably more candidates as it lacks any prior knowledge of the constraint structure. The naive random approach takes the shape of a gaussian distribution with the broadside angles requiring more tries, a trend similar to\gls{CEM} sice it is initialized from a similarly uniformed distribution.
+\figurename~\ref{fig:benchmark_efficiency} compares the three methods in terms of the number of candidates evaluated before a valid solution is found (left panel) and the success rate across angles (right panel). Solid lines report the median number of tries, with shaded bands covering the 25th--75th percentile range across independent repetitions. The\gls{PPO} model requires substantially fewer candidates to find a valid configuration at most angles.\gls{CEM} improves on naive random search by adapting its sampling distribution over successive generations, but still requires considerably more candidates as it lacks any prior knowledge of the constraint structure. The naive random approach takes the shape of a gaussian distribution with the broadside angles requiring more tries, a trend similar to\gls{CEM} since it is initialized from a similarly uniform distribution.
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.8\textwidth]{images/chapter5/benchmark_efficiency.pdf}
@@ -280,7 +281,7 @@ For each azimuth angle $\varphi \in [-90\degree, 90\degree]$, all three methods 
 
 \subsection{Search Latency}
 
-\figurename~\ref{fig:benchmark_latency} reports the total wall-clock latency (in milliseconds) required to find a valid beamforming configuration for each azimuth angle. The median latency annotations in the figure quantify the practical speed advantage of the learned policy over both baselines: the median latency is $0.3ms$ for the learned policy, $0.7ms$ for\gls{CEM} and $2.1ms$ for random search. These results indicate that, altough\gls{CEM}'s adaptive sampling offers a modest efficiency gain over a purely random strategy, it does not approach the latency reduction afforded by the learned policy.
+\figurename~\ref{fig:benchmark_latency} reports the total wall-clock latency (in milliseconds) required to find a valid beamforming configuration for each azimuth angle. The median latency annotations in the figure quantify the practical speed advantage of the learned policy over both baselines: the median latency is $0.3ms$ for the learned policy, $0.7ms$ for\gls{CEM} and $2.1ms$ for random search. These results indicate that, although\gls{CEM}'s adaptive sampling offers a modest efficiency gain over a purely random strategy, it does not approach the latency reduction afforded by the learned policy.
 \\
 \\
 It is worth noting that this comparison, while informative of raw search efficiency, is not entirely like-for-like: random search and\gls{CEM} are only tasked with satisfying the amplitude floor and phase flatness constraints, whereas the\gls{PPO} model is trained under an objective that additionally rewards configurations which degrade the\gls{SNR} at potential eavesdropper locations. The speedup and sample efficiency gains reported above therefore likely understate the relative advantage of the learned policy, which must satisfy a strictly harder, multi-objective problem within the same or fewer search attempts.
@@ -288,7 +289,7 @@ It is worth noting that this comparison, while informative of raw search efficie
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.6\textwidth]{images/chapter5/benchmark_latency.pdf}
-    \caption{Total latency (ms) to find a valid beamforming configuration:\gls{PPO} model vs.\\gls{CEM} vs.\ random search across all azimuth angles. Shaded bands show the 25th--75th percentile range.}
+    \caption{Total latency (ms) to find a valid beamforming configuration:\gls{PPO} model vs.\gls{CEM} vs.\ random search across all azimuth angles. Shaded bands show the 25th--75th percentile range.}
     \label{fig:benchmark_latency}
 \end{figure}
 \FloatBarrier
@@ -360,7 +361,7 @@ Analysis of 100 stochastic inference draws shows that the flattened-curriculum m
         \centering
         \includegraphics[width=\linewidth]{images/chapter5/no_curriculum/beam_pattern.pdf}
     \end{minipage}
-    \caption{Inference overview for the curriculum flattened $N=5$\gls{ULA}. Top-left: amplitude profile across the full angular range.. Top-right:\gls{BER} vs.\ azimuth angle at $E_s/N_0 = 10$\,dB with the legitimate user at $\varphi = 30\degree$. Bottom-left: secrecy matrix. Bottom-right: beam patterns for $\varphi \in \{-60\degree, 0\degree, 60\degree\}$}
+    \caption{Inference overview for the curriculum flattened $N=5$\gls{ULA}. Top-left: amplitude profile across the full angular range. Top-right:\gls{BER} vs.\ azimuth angle at $E_s/N_0 = 10$\,dB with the legitimate user at $\varphi = 30\degree$. Bottom-left: secrecy matrix. Bottom-right: beam patterns for $\varphi \in \{-60\degree, 0\degree, 60\degree\}$}
     \label{fig:no_curriculum_inference}
 \end{figure}
 
@@ -388,7 +389,7 @@ where $a_0$ is a slope-correction action with scale $\sigma_s = \pi/4$, meaning 
 \figurename~\ref{fig:physics_informed_inference} and \figurename~\ref{fig:diversity_analysis_physics_informed} summarizes the inference behaviour while \figurename~\ref{fig:physics_informed_training} summarize the training dynamics.
 
 \subsubsection{Results}
-The training dynamics are stable and broadly similar to the baseline while the expressive power of the parameterisation is reduced and visible in the diversity analysis (\figurename~\ref{fig:diversity_analysis_physics_informed}: the fraction of duplicate solutions is substantially higher than in the baseline, indicating that the policy converges to a narrower set of configurations. This is a structural consequence of the $\pm\frac{\pi}{4}$ perturbation bound; Valid\gls{DDM} steering vectors tend to cluster near the\gls{DFT} ramp, so the constrained action space covers the feasible region but leaves little room for structurally distinct solutions. This result is nonetheless informative, demonstrating that physics-informed parameterisation is a viable solution and that a more expressive variant could potentially close the diversity gap and rival the purely gradient-driven baseline. 
+The training dynamics are stable and broadly similar to the baseline while the expressive power of the parameterisation is reduced and visible in the diversity analysis (\figurename~\ref{fig:diversity_analysis_physics_informed}: the fraction of duplicate solutions is substantially higher than in the baseline, indicating that the policy converges to a narrower set of configurations. This is a structural consequence of the $\pm\frac{\pi}{4}$ perturbation bound. Valid\gls{DDM} steering vectors tend to cluster near the\gls{DFT} ramp, so the constrained action space covers the feasible region but leaves little room for structurally distinct solutions. This result is nonetheless informative, demonstrating that physics-informed parameterisation is a viable solution and that a more expressive variant could potentially close the diversity gap and rival the purely gradient-driven baseline. 
 
 \begin{figure}[p]  % Force to its own page
     \centering
@@ -466,7 +467,7 @@ This experiment combines the physics-informed action parameterisation with a lar
 \figurename~\ref{fig:ula8_inference} and \figurename~\ref{fig:ula8_diversity_analysis} summarize the inference behavior, while \figurename~\ref{fig:ula8_training} summarizes the training dynamics.
 
 \subsubsection{Results}
-The experiment compounds the limitations identified in \subsectionname~\ref{subsec:physics_informed}. The inference results show that the physics-informed policy uses almost all elements at near-full amplitude, with at most one element slightly reduced, while the gradient-based baseline learns to silence or reduce elements. This root cause of this difference is that element silencing is only useful for\gls{DDM} secrecy when combined with non-ramp-like  phases; The gradient approach is free to pair reduced element amplitudes with unconventional phase assignments on the remaining elements, breaking the symmetry of the array response in a way that produces rapid phase variation outside the legitimate receiver's window. Under the physics-informed parameterisation, phases are constrained to stay within $\pm\frac{\pi}{4}$ of the\gls{DFT} ramp and silencing an element merely weakens and broadens the beam without generating the spatial phase variation that secrecy requires; The policy therefore correctly concludes that silencing is not worth the amplitude penalty since it gains nothing in secrecy. The diversity analysis (\figurename~\ref{fig:ula8_diversity_analysis}) shows that the duplicate rate is substantially higher than for $N=5$ and is distributed over the full angular range.
+The experiment compounds the limitations identified in \subsectionname~\ref{subsec:physics_informed}. The inference results show that the physics-informed policy uses almost all elements at near-full amplitude, with at most one element slightly reduced, while the gradient-based baseline learns to silence or reduce elements. This root cause of this difference is that element silencing is only useful for\gls{DDM} secrecy when combined with non-ramp-like phases. The gradient approach is free to pair reduced element amplitudes with unconventional phase assignments on the remaining elements, breaking the symmetry of the array response in a way that produces rapid phase variation outside the legitimate receiver's window. Under the physics-informed parameterisation, phases are constrained to stay within $\pm\frac{\pi}{4}$ of the\gls{DFT} ramp and silencing an element merely weakens and broadens the beam without generating the spatial phase variation that secrecy requires. The policy therefore correctly concludes that silencing is not worth the amplitude penalty since it gains nothing in secrecy. The diversity analysis (\figurename~\ref{fig:ula8_diversity_analysis}) shows that the duplicate rate is substantially higher than for $N=5$ and is distributed over the full angular range.
 
 \begin{figure}[p]  % Force to its own page
     \centering
@@ -517,7 +518,7 @@ The experiment compounds the limitations identified in \subsectionname~\ref{subs
         \centering
         \includegraphics[width=\linewidth]{images/chapter5/ula8/beam_pattern.pdf}
     \end{minipage}
-    \caption{Inference overview for the $N=8$\gls{ULA}. Top-left: amplitude profile across the full angular range.. Top-right:\gls{BER} vs.\ azimuth angle at $E_s/N_0 = 10$\,dB with the legitimate user at $\varphi = 30\degree$. Bottom-left: secrecy matrix. Bottom-right: beam patterns for $\varphi \in \{-60\degree, 0\degree, 60\degree\}$}
+    \caption{Inference overview for the $N=8$\gls{ULA}. Top-left: amplitude profile across the full angular range. Top-right:\gls{BER} vs.\ azimuth angle at $E_s/N_0 = 10$\,dB with the legitimate user at $\varphi = 30\degree$. Bottom-left: secrecy matrix. Bottom-right: beam patterns for $\varphi \in \{-60\degree, 0\degree, 60\degree\}$}
     \label{fig:ula8_inference}
 \end{figure}
 
