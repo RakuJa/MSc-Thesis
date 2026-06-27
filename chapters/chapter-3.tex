@@ -19,7 +19,7 @@ Given the field and scope of the problem, the Python programming language has be
 
 \subsection{Development tools}
 
-The choice of tool used to handle the python development environment was uv, a Python package and project manager. With respect to the classic approach of using pip with virtual environment and a requirements.txt file, uv enables the developer to have more granular control on the dependencies' versions. 
+The choice of tool used to handle the python development environment was \texttt{uv}, a Python package and project manager. With respect to the classic approach of using \texttt{pip} with virtual environment and a \texttt{requirements.txt} file, \texttt{uv} enables the developer to have more granular control on the dependencies' versions.
 
 
 \begin{longtable}{@{}|l|p{7cm}|l|@{}}
@@ -146,21 +146,21 @@ A critical observation follows directly from this expression: $\varphi$ appears 
 The array has no means of distinguishing between two directions that share the same value of $u$. Equivalently, all physics of the beamforming problem (gain, phase flatness, constraint satisfaction) is determined entirely by the spatial frequency $u$, not by the azimuth angle $\varphi$ per se.
 \subsubsection{Angle-Dependent Constraint Difficulty}
 \label{subsec:angle_dependant_constraint}
-The\gls{DDM} validity constraint requires that, for a given target direction $\varphi^*$, the array response $f(\varphi)$ satisfies two conditions simultaneously over the angular support $[\varphi^* - \delta\varphi,\, \varphi^* + \delta\varphi]$ (with $\delta\varphi = 5\degree$ in the system under study):
+The\gls{DDM} validity constraint requires that, for a given target direction $\varphi^\star$, the array response $f(\varphi)$ satisfies two conditions simultaneously over the angular support $[\varphi^\star - \delta_\varphi,\, \varphi^\star + \delta_\varphi]$ (with $\delta_\varphi = 5\degree$ in the system under study):
 \begin{align}
     \log_{10}|f(\varphi)| &\geq \varepsilon_a & &\text{(amplitude floor)}  \label{eq:ddm_amplitude} \\
-    |\angle f(\varphi) - \angle f(\varphi^*)| &\leq \varepsilon_p & &\text{(phase flatness)} \label{eq:ddm_phase}
+    |\angle f(\varphi) - \angle f(\varphi^\star)| &\leq \varepsilon_p & &\text{(phase flatness)} \label{eq:ddm_phase}
 \end{align}
 where $\varepsilon_p = 10\degree$ is the phase tolerance. Note that $\varepsilon_a$ is the raw base-10 logarithm of the normalised amplitude. The phase flatness condition is the binding constraint for secrecy: it forces the phase of the received signal to remain approximately constant within the legitimate receiver's angular neighbourhood while allowing it to vary freely, and ideally rapidly, outside. Because the array response depends only on $u = \sin\varphi$, the angular support maps to an interval in $u$-space of width:
 \begin{equation}
-    \Delta u(\varphi^*) = |\sin(\varphi^* + \delta\varphi) - \sin(\varphi^* - \delta\varphi)| = 2\cos\varphi^*\sin(\delta\varphi)
+    \Delta u(\varphi^\star) = |\sin(\varphi^\star + \delta_\varphi) - \sin(\varphi^\star - \delta_\varphi)| = 2\cos\varphi^\star\sin(\delta_\varphi)
 \end{equation}
-This width is maximised at broadside and collapses toward zero at endfire, meaning that the feasible set of valid steering vectors is smallest at broadside. \figurename~\ref{fig:sampling_constraint_bandwidth} plots $\Delta u(\varphi^*)$ for the system under study: the constraint window spans $\Delta u = 0.174$ at $\varphi^* = 0\degree$ and only $\Delta u = 0.087$ at $\varphi^* = 60\degree$: exactly half as wide.
-The array response $f(u)$ is a degree-$(N-1) = 4$ polynomial in $z = e^{j\pi u}$. As $u$ sweeps across the constraint window, $z$ traces an arc of the unit circle in the complex plane. By the argument principle, any zero of $f$ that lies near this arc induces a rapid phase swing across the corresponding range of $u$: for the phase to remain within $\pm\varepsilon_p$ throughout the window, all four polynomial zeros must be kept well away from the constraint arc. The arc subtends an angle of $\pi\Delta u(\varphi^*)$ radians:
+This width is maximised at broadside and collapses toward zero at endfire, meaning that the feasible set of valid steering vectors is smallest at broadside. \figurename~\ref{fig:sampling_constraint_bandwidth} plots $\Delta u(\varphi^\star)$ for the system under study: the constraint window spans $\Delta u = 0.174$ at $\varphi^\star = 0\degree$ and only $\Delta u = 0.087$ at $\varphi^\star = 60\degree$: exactly half as wide.
+The array response $f(u)$ is a degree-$(N-1) = 4$ polynomial in $z = e^{j\pi u}$. As $u$ sweeps across the constraint window, $z$ traces an arc of the unit circle in the complex plane. By the argument principle, any zero of $f$ that lies near this arc induces a rapid phase swing across the corresponding range of $u$: for the phase to remain within $\pm\varepsilon_p$ throughout the window, all four polynomial zeros must be kept well away from the constraint arc. The arc subtends an angle of $\pi\Delta u(\varphi^\star)$ radians:
 \begin{align}
-    \varphi^*=0\degree&:\quad \pi \times 0.174 \approx 0.55\;\text{rad}\;(\approx 31\degree\;\text{of arc}) \\
-    \varphi^*=60\degree&:\quad \pi \times 0.087 \approx 0.27\;\text{rad}\;(\approx 16\degree\;\text{of arc}) \\
-    \varphi^*=80\degree&:\quad \pi \times 0.030 \approx 0.09\;\text{rad}\;(\approx 5\degree\;\text{of arc})
+    \varphi^\star=0\degree&:\quad \pi \times 0.174 \approx 0.55\;\text{rad}\;(\approx 31\degree\;\text{of arc}) \\
+    \varphi^\star=60\degree&:\quad \pi \times 0.087 \approx 0.27\;\text{rad}\;(\approx 16\degree\;\text{of arc}) \\
+    \varphi^\star=80\degree&:\quad \pi \times 0.030 \approx 0.09\;\text{rad}\;(\approx 5\degree\;\text{of arc})
 \end{align}
 At broadside, all four zeros must collectively avoid a $31\degree$ arc, a severe geometrical restriction that confines valid zero configurations to a small subset of the possible arrangements confining valid steering vectors to a small, concentrated region of the $2N$-dimensional parameter space. Near endfire, the constraint arc shrinks to just $5\degree$, and almost any zero placement satisfies it since the feasible set of valid steering vectors is large and geometrically diverse.\\
 The direct consequence is that valid steering vectors at broadside are structurally similar to one another: every valid solution must displace its polynomial zeros from the same substantial arc since they are all constrained to a tight cluster in the high-dimensional parameter space, sharing the same structural property and differing only in the exact placement of zeros outside the arc and in the global phase offset. At endfire, valid solutions are spread across a wide region of parameter space and are structurally diverse.
@@ -173,32 +173,32 @@ The direct consequence is that valid steering vectors at broadside are structura
 \end{figure}
 \FloatBarrier
 
-The matched-filter or\gls{DFT} steering vector, with phases $\psi_n = \pi\sin\varphi^* \cdot n$, is the canonical starting point for any beamformer: it maximises gain at $\varphi^*$ without imposing any further constraint. Under this choice, the array response phase increases linearly with $(\sin\varphi - \sin\varphi^*)$, giving a phase gradient at the target of:
+The matched-filter or\gls{DFT} steering vector, with phases $\psi_n = \pi\sin\varphi^\star \cdot n$, is the canonical starting point for any beamformer: it maximises gain at $\varphi^\star$ without imposing any further constraint. Under this choice, the array response phase increases linearly with $(\sin\varphi - \sin\varphi^\star)$, giving a phase gradient at the target of:
 \begin{equation}
-    \frac{d\angle f}{d\varphi}\bigg|_{\varphi=\varphi^*} = \frac{N-1}{2}\,\pi\cos\varphi^*
+    \frac{d\angle f}{d\varphi}\bigg|_{\varphi=\varphi^\star} = \frac{N-1}{2}\,\pi\cos\varphi^\star
 \end{equation}
-For $N = 5$ this evaluates to $2\pi\cos\varphi^*$ rad/rad, and the maximum phase deviation accumulated across the half-window $\delta\varphi$ is approximately:
+For $N = 5$ this evaluates to $2\pi\cos\varphi^\star$ rad/rad, and the maximum phase deviation accumulated across the half-window $\delta_\varphi$ is approximately:
 \begin{equation}
-    \Delta\angle f_{\max} \approx \frac{N-1}{2}\,\pi\cos\varphi^* \cdot \delta\varphi = 2\pi\cos\varphi^* \cdot \delta\varphi
+    \Delta\angle f_{\max} \approx \frac{N-1}{2}\,\pi\cos\varphi^\star \cdot \delta_\varphi = 2\pi\cos\varphi^\star \cdot \delta_\varphi
 \end{equation}
-At broadside ($\varphi^* = 0\degree$, $\delta\varphi = 0.0873\,\text{rad}$) this gives $\Delta\angle f_{\max} \approx 31\degree$: more than three times the $\varepsilon_p = 10\degree$ tolerance. The crossover angle at which the\gls{DFT} solution just satisfies the phase constraint is:
+At broadside ($\varphi^\star = 0\degree$, $\delta_\varphi = 0.0873\,\text{rad}$) this gives $\Delta\angle f_{\max} \approx 31\degree$: more than three times the $\varepsilon_p = 10\degree$ tolerance. The crossover angle at which the\gls{DFT} solution just satisfies the phase constraint is:
 \begin{equation}
-    \varphi^*_{\text{cross}} = \arccos\!\left(\frac{\varepsilon_p}{\frac{N-1}{2}\pi\delta\varphi}\right) \approx 71\degree
+    \varphi^\star_{\text{cross}} = \arccos\!\left(\frac{\varepsilon_p}{\frac{N-1}{2}\pi\delta_\varphi}\right) \approx 71\degree
 \end{equation}
-\figurename~\ref{fig:sampling_dft_deviation} confirms this threshold numerically: the\gls{DFT} deviation exceeds $\varepsilon_p$ for all $|\varphi^*| < 71\degree$, covering the entire range from $0\degree$ to $60\degree$. \figurename~\ref{fig:sampling_phase_curves} shows the detailed phase deviation curves for four representative target angles.
-Since the\gls{DFT} solution maximises the inner product between the steering vector and the array manifold at $\varphi^*$, it is the attractor of any gradient ascent on received power, yet the valid broadside cluster sits elsewhere, separated from the\gls{DFT} solution by a broad infeasible region that provides no gradient bridge. The magnitude of this gap, a.k.a. how far the solution is from the valid cluster in steering vector space, grows as $\cos\varphi^*$ and is most severe at broadside.
+\figurename~\ref{fig:sampling_dft_deviation} confirms this threshold numerically: the\gls{DFT} deviation exceeds $\varepsilon_p$ for all $|\varphi^\star| < 71\degree$, covering the entire range from $0\degree$ to $60\degree$. \figurename~\ref{fig:sampling_phase_curves} shows the detailed phase deviation curves for four representative target angles.
+Since the\gls{DFT} solution maximises the inner product between the steering vector and the array manifold at $\varphi^\star$, it is the attractor of any gradient ascent on received power, yet the valid broadside cluster sits elsewhere, separated from the\gls{DFT} solution by a broad infeasible region that provides no gradient bridge. The magnitude of this gap, a.k.a. how far the solution is from the valid cluster in steering vector space, grows as $\cos\varphi^\star$ and is most severe at broadside.
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.75\textwidth]{images/chapter3/sampling_phase_curves.pdf}
-    \caption{\gls{DFT} beamformer phase across $\pm5.0\degree$ window. Curves outside the green band require a non-\gls{DFT} solution.}
+    \caption{\acs{DFT} beamformer phase across $\pm5.0\degree$ window. Curves outside the green band require a non-\acs{DFT} solution.}
     \label{fig:sampling_phase_curves}
 \end{figure}
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.75\textwidth]{images/chapter3/sampling_dft_deviation.pdf}
-    \caption{\gls{DFT} beamformer phase deviation with N=5 elements. At broadside ($0\degree$): $31\degree$,\gls{DFT}-only solutions are valid only for $|\varphi^*| > 71\degree$}
+    \caption{\acs{DFT} beamformer phase deviation with N=5 elements. At broadside ($0\degree$): $31\degree$, \acs{DFT}-only solutions are valid only for $|\varphi^\star| > 71\degree$}
     \label{fig:sampling_dft_deviation}
 \end{figure}
 \FloatBarrier
@@ -208,9 +208,9 @@ Since the\gls{DFT} solution maximises the inner product between the steering vec
 The constraint difficulty described in \sectionname~\ref{subsec:angle_dependant_constraint} is an intrinsic property of the\gls{ULA} geometry that can be exacerbated or alleviated by the chosen sampling strategy.
 Training angle sets are most naturally specified in degrees of azimuth: $\varphi \in \{-90\degree, -89\degree, \ldots, +90\degree\}$, a set of 181 angles uniformly spaced in $\varphi$. The Jacobian of the mapping $u = \sin\varphi$ is $du/d\varphi = \cos\varphi$, so equal angular steps $\Delta\varphi$ correspond to unequal $u$-space displacements:
 \begin{equation}
-    \Delta u \approx \cos\varphi^* \cdot \Delta\varphi
+    \Delta u \approx \cos\varphi^\star \cdot \Delta\varphi
 \end{equation}
-Near broadside, ($\cos\varphi^* \approx 1$) each $1\degree$ step produces the largest possible displacement in $u$-space causing sampled angles to be spread across the broadside region while near endfire ($\cos\varphi^* \to 0$) the same angular step produces a negligible $u$-displacement causing large numbers of angles to crowd into a vanishingly narrow spatial-frequency band.
+Near broadside, ($\cos\varphi^\star \approx 1$) each $1\degree$ step produces the largest possible displacement in $u$-space causing sampled angles to be spread across the broadside region while near endfire ($\cos\varphi^\star \to 0$) the same angular step produces a negligible $u$-displacement causing large numbers of angles to crowd into a vanishingly narrow spatial-frequency band.
 When $\varphi$ is drawn uniformly from $[-90\degree, 90\degree]$, the induced distribution of $u = \sin\varphi$ follows the arcsine law, $p(u) = 1/(\pi\sqrt{1-u^2})$, which diverges at $u = \pm 1$ and attains its minimum $1/\pi$ at $u = 0$. The histogram is therefore U-shaped: density is lowest at broadside and spikes sharply at the endfire limits, as shown by the blue histogram in \figurename~\ref{fig:sampling_density}. The red histogram shows the distribution obtained by sampling $u$ uniformly in $[-1, 1]$, flat by construction.
 Concretely, with 181 uniform-in-$\varphi$ angles: the endfire neighbourhood $|\varphi| > 80\degree$ contributes 22 angles yet spans only ${\approx}3\%$ of the full $u$-domain. The broadside neighbourhood $|\varphi| < 10\degree$ contributes a comparable 21 angles but spans ${\approx}35\%$ of the $u$-domain, leaving it severely undersampled relative to its spatial-frequency extent.
 
@@ -224,7 +224,7 @@ Concretely, with 181 uniform-in-$\varphi$ angles: the endfire neighbourhood $|\v
 \subsubsection{Compound Effect and Adopted Sampling Strategy}
 
 The physical difficulty \sectionname~\ref{subsec:angle_dependant_constraint} and the sampling bias \sectionname~\ref{subsec:sin-space_sampling_bias} are independent mechanisms, but they can combine adversarially.
-The physical difficulty means that each broadside episode is unlikely to yield a valid solution easily, so the policy needs many broadside episodes to accumulate enough successful exploration to converge on the valid cluster while the sampling bias simultaneously ensures that broadside receives the fewest episodes per unit of $u$-space: precisely the region that most needs a large exploration budget. Meanwhile, endfire receives the most episodes per $u$-space unit despite needing the least: the feasible set is large, the\gls{DFT} solution is already valid for $|\varphi^*| > 71\degree$, and the policy consolidates endfire performance quickly resulting in abundant valid rewards from endfire dominating the policy gradient leading to reinforcing strategies that work at endfire. These same strategies do not transfer to broadside as the valid solutions occupy a structurally different, concentrated cluster in steering vector space and because broadside episodes are infrequent, the corrective signal from broadside failures is too sparse to drive the policy toward the correct region.\\
+The physical difficulty means that each broadside episode is unlikely to yield a valid solution easily, so the policy needs many broadside episodes to accumulate enough successful exploration to converge on the valid cluster while the sampling bias simultaneously ensures that broadside receives the fewest episodes per unit of $u$-space: precisely the region that most needs a large exploration budget. Meanwhile, endfire receives the most episodes per $u$-space unit despite needing the least: the feasible set is large, the\gls{DFT} solution is already valid for $|\varphi^\star| > 71\degree$, and the policy consolidates endfire performance quickly resulting in abundant valid rewards from endfire dominating the policy gradient leading to reinforcing strategies that work at endfire. These same strategies do not transfer to broadside as the valid solutions occupy a structurally different, concentrated cluster in steering vector space and because broadside episodes are infrequent, the corrective signal from broadside failures is too sparse to drive the policy toward the correct region.\\
 Sampling training angles uniformly in $u = \sin\varphi$ and mapping back via $\varphi = \arcsin(u)$, produces the flat distribution shown in red in \figurename~\ref{fig:sampling_density}. This corrects the secondary cause: it equalises exploration budget across all spatial frequencies, shifting episodes away from the already mastered endfire region and toward the underexplored broadside region.
 Addressing the physical difficulty, instead, requires an exploration regime capable of navigating a high-dimensional parameter space toward a geometrically concentrated feasible set and\gls{CL} provides a principled mechanism: the agent first builds intuition for what valid solutions look like at broadside angles, then transfers and refines that understanding as the constraint tightens and finally the target angles expand to the desired $[-90\degree, 90\degree]$.
 
@@ -294,16 +294,16 @@ Before the soft constraint evaluation, two amplitude terms provide a base gradie
 where $\overline{\alpha} = \frac{1}{N}\sum_n \alpha_n$ is the mean amplitude and the log term is the per-element mean of $\log(\alpha_n)$ clamped at $10^{-2}$. The linear term pushes all elements toward full power, while the log penalty imposes a large gradient near zero and discourages any element from being completely silenced. The clamp at $10^{-2}$ bounds the penalty at $\approx -6.5$ per element so the gradient does not vanish for fully-off elements.
 
 \subsubsection{Soft constraint terms.}
-The second tier evaluates the soft\gls{DDM} validity of the produced steering vector. Four statistics are extracted from the soft validation function evaluated over a 2D grid of $N_v = 40$ points per axis (a $40 \times 40$ grid within the support $[\theta_{\mathrm{ref}} \pm \delta_\theta] \times [\varphi \pm \delta_\varphi]$): the mean amplitude score $s_a \in [0,1]$, the mean phase score $s_p \in [0,1]$, the minimum phase sigmoid $p_{\min} \in [0,1]$, and the mean absolute phase deviation $\bar{\delta\varphi}$. The soft constraint reward is:
+The second tier evaluates the soft\gls{DDM} validity of the produced steering vector. Four statistics are extracted from the soft validation function evaluated over a 2D grid of $N_v = 40$ points per axis (a $40 \times 40$ grid within the support $[\theta_{\mathrm{ref}} \pm \delta_\theta] \times [\varphi \pm \delta_\varphi]$): the mean amplitude score $s_a \in [0,1]$, the mean phase score $s_p \in [0,1]$, the minimum phase sigmoid $p_{\min} \in [0,1]$, and the mean absolute phase deviation $\bar{\delta_\varphi}$. The soft constraint reward is:
 \begin{equation}
-    r_{\text{val}} = 3\,s_a + 4\,s_p + p_{\min} - 2\,\frac{\bar{\delta\varphi}}{\pi}
+    r_{\text{val}} = 3\,s_a + 4\,s_p + p_{\min} - 2\,\frac{\bar{\delta_\varphi}}{\pi}
 \end{equation}
-The four terms are additive, so each provides an independent gradient signal throughout training; Positive terms reward progress toward the feasible region even before full validity is achieved, while the penalty on $\bar{\delta\varphi}$ discourages large average phase errors that keep the gradient alive when the policy is far from the validation constraints.
+The four terms are additive, so each provides an independent gradient signal throughout training; positive terms reward progress toward the feasible region even before full validity is achieved, while the penalty on $\bar{\delta_\varphi}$ discourages large average phase errors that keep the gradient alive when the policy is far from the validation constraints.
 
 \subsubsection{Legitimate receiver BER.}
-The third tier directly optimises the\gls{BER} experienced by the intended receiver. Given the normalized array gain $|f^*|$ at the target direction and the curriculum-adjusted reference\gls{SNR} $\mathrm{SNR}_0$ (\subsubsectionname~\ref{subsubsec:curriculum_learning}), the received $E_s/N_0$ is $|f^*|^2 \cdot 10^{\mathrm{SNR}_0/10}$ and the theoretical $M$-\gls{PSK}\gls{BER} (with $M = 8$ throughout this work) is:
+The third tier directly optimises the\gls{BER} experienced by the intended receiver. Given the normalized array gain $|f^\star|$ at the target direction and the curriculum-adjusted reference\gls{SNR} $\mathrm{SNR}_0$ (\subsubsectionname~\ref{subsubsec:curriculum_learning}), the received $E_s/N_0$ is $|f^\star|^2 \cdot 10^{\mathrm{SNR}_0/10}$ and the theoretical $M$-\gls{PSK}\gls{BER} (with $M = 8$ throughout this work) is:
 \begin{equation}
-    B_{\text{legit}} = \mathrm{BER}_{M\text{-PSK}}\!\left(|f^*|^2 \cdot 10^{\mathrm{SNR}_0/10}\right)
+    B_{\text{legit}} = \mathrm{BER}_{M\text{-PSK}}\!\left(|f^\star|^2 \cdot 10^{\mathrm{SNR}_0/10}\right)
 \end{equation}
 A log-scale\gls{BER} score maps this to a normalised reward in $[0, 1]$:
 \begin{equation}
@@ -318,7 +318,7 @@ This term is applied unconditionally, without gating on validity, since amplitud
 \subsubsection{Pre-validation secrecy incentive.}
 The fourth pre-validation term rewards configurations that produce high\gls{BER} at eavesdropper positions. For each angle $\varphi_e$ in the training set satisfying $|\varphi_e - \varphi| > 10^\circ$, the eavesdropper\gls{BER} is computed accounting for both the received\gls{SNR} and the phase offset relative to the legitimate receiver:
 \begin{equation}
-    B_e(\varphi_e) = \mathrm{BER}_{M\text{-PSK}}\!\left(|f(\varphi_e)|^2 \cdot 10^{\mathrm{SNR}_0/10},\; \angle f(\varphi_e) - \angle f^*\right)
+    B_e(\varphi_e) = \mathrm{BER}_{M\text{-PSK}}\!\left(|f(\varphi_e)|^2 \cdot 10^{\mathrm{SNR}_0/10},\; \angle f(\varphi_e) - \angle f^\star\right)
 \end{equation}
 The phase-aware\gls{BER} formula accounts for the fact that a phase error of $\pi/M$ places the received symbol on a decision boundary, maximising decoding errors regardless of\gls{SNR}. The unweighted mean eavesdropper\gls{BER} $\bar{B}_e$ (every eavesdropper angle counted equally, so that low-amplitude sidelobe angles receive the same gradient signal as main-beam directions) defines the secrecy\gls{BER} gap:
 \begin{equation}
@@ -328,19 +328,19 @@ A positive gap indicates that eavesdroppers on average experience a higher error
 \begin{equation}
     r_{\text{sec}} = 5\,\max(0,\, \Delta B)
 \end{equation}
-Only positive gaps are rewarded before validity is confirmed, so early exploration is not penalised for failing to achieve secrecy before the beam shape itself is geometrically valid. When the array gain at the target direction falls below $|f^*| < 0.05$, the secrecy terms are skipped and default to a neutral value ($\bar{B}_e = 0$, $B_{e,\min} = 0.5$), avoiding ill-conditioned\gls{BER} estimates at near-zero gain.
+Only positive gaps are rewarded before validity is confirmed, so early exploration is not penalised for failing to achieve secrecy before the beam shape itself is geometrically valid. When the array gain at the target direction falls below $|f^\star| < 0.05$, the secrecy terms are skipped and default to a neutral value ($\bar{B}_e = 0$, $B_{e,\min} = 0.5$), avoiding ill-conditioned\gls{BER} estimates at near-zero gain.
 
 \subsubsection{Validity bonus and secrecy penalties.}
 When the hard validity check passes, a structured validity bonus reinforces secrecy objectives:
 \begin{equation}
-    r_{\text{valid}} = w_\varphi \cdot 20 + 25\,\Delta B + w_{\text{wc}} \cdot \Delta B_{\min} - 35\,f_{\text{low}} + 15\,|f^*|
+    r_{\text{valid}} = w_\varphi \cdot 20 + 25\,\Delta B + w_{\text{wc}} \cdot \Delta B_{\min} - 35\,f_{\text{low}} + 15\,|f^\star|
 \end{equation}
 where:
 \begin{itemize}
     \item $w_\varphi = 1 + |\cos\varphi| \in [1, 2]$ is an angle-dependent weight that assigns double credit to broadside solutions, compensating for the structural difficulty at $\varphi \approx 0^\circ$ described in \sectionname~\ref{subsec:angle_dependant_constraint}.
     \item $\Delta B_{\min} = B_{e,\min} - B_{\text{legit}}$ is the worst-case secrecy gap, where $B_{e,\min}$ is the minimum\gls{BER} across all eavesdropper angles (the easiest-to-decode adversary). The weight is $w_{\text{wc}} = 80$ if $\Delta B_{\min} < 0$ and $w_{\text{wc}} = 50$ otherwise, imposing a stronger penalty when the worst-case eavesdropper outperforms the legitimate receiver.
     \item $f_{\text{low}}$ is the fraction of eavesdropper angles with $B_e < 0.1$, penalising solutions that leave a large proportion of the angular space trivially decodable.
-    \item The $15|f^*|$ term provides a gradient, pushing the array gain above the constraint floor toward maximum coherent gain; the\gls{BER} score saturates at $w_{\text{ber}}$ for any valid configuration at training\gls{SNR}, making this term the sole remaining gradient for increasing gain once validity is achieved.
+    \item The $15|f^\star|$ term provides a gradient, pushing the array gain above the constraint floor toward maximum coherent gain; the\gls{BER} score saturates at $w_{\text{ber}}$ for any valid configuration at training\gls{SNR}, making this term the sole remaining gradient for increasing gain once validity is achieved.
 \end{itemize}
 
 \subsubsection{Total reward}

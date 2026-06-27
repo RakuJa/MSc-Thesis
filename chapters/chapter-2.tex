@@ -19,8 +19,8 @@ Digital communication systems map discrete symbols onto complex values in a cons
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.5\textwidth]{images/chapter2/4psk_constellation_example.png}
-    \caption{Example of mapping of 4 symbols to a constellation diagram. Source \cite{superspritz2025qpsk}}
+    \includegraphics[width=0.5\textwidth]{images/chapter2/4psk_constellation_example.pdf}
+    \caption{Example of mapping of 4 symbols to a constellation diagram using Gray mapping. Source \cite{superspritz2025qpsk}}
     \label{fig:4psk_constellation_example}
 \end{figure}
 
@@ -34,6 +34,13 @@ An antenna array consists of multiple radiating elements arranged in space and d
 \end{equation}
 where $w_n$ are complex weights and $k = \frac{2\pi}{\lambda}$ is the wavenumber.\\
 By correctly choosing the weights $w_n$, the array can produce constructive interference in desired directions and destructive interference elsewhere, enabling spatial selectivity \cite{balanis2005antenna}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.75\textwidth]{chapter2/ula_structure.pdf}
+    \caption{Structure of a \acs{ULA}: $N$ radiating elements are spaced by $d$, each fed through an amplitude weight $\alpha_n$ and a phase shifter $\psi_n^\star$, so that the array response is steered toward a target direction $\varphi^\star$, measured relative to the broadside direction ($\varphi=0$).}
+    \label{fig:ula_structure}
+\end{figure}
 
 \section{Beamforming}
 

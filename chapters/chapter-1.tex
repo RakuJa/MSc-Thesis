@@ -10,52 +10,31 @@
 %**************************************************************
 \section{Directional modulation demand}
 
-{\color{blue} GENERAL COMMENTS: \\
-1- I think you need to work on the conclusions to better highlight the main contributions of your work and clearly convey the key takeaways of the thesis, either in the form of bullet points or short paragraphs. I have added a revised conclusion in blue. Please check whether the points I raised are consistent with your work and adapt them accordingly. You can also make it shorter if necessary.
-
-2- Please check the notation carefully throughout the manuscript. I noticed that the thesis alternates between $\phi$ and $\varphi$ (as well as $\phi^\star$ and $\varphi^\star$). If this is not intentional, choose one notation and use it consistently throughout the document.
-\textbf{opted for for using $\varphi$}
-
-
-3- Chapter 2 introduces a full 3D model with elevation $\theta$ and azimuth $\phi$, but Chapter 3 then reduces the problem to $\theta = 0^\circ$ and studies only the azimuth dimension. To avoid confusion for the reader, explicitly state at the beginning of Chapter 3:
-
-
-"For the remainder of this work, elevation is fixed at $\theta = 0^\circ$ and only the azimuth dimension is optimized."\textbf{Done}
-
-
-4- Since the problem is ultimately formulated as a contextual bandit, some of the discussion on Markov Decision Processes (MDPs) could be shortened. For example, you could reduce the general RL background and instead focus more on the reward design rationale, the dynamic DM constraints, and their security interpretation.\textbf{Moved MDP to glossary, removed section. Need to write more on the design rationale, DDM constraints, security interpretation}
-
-
-5- The literature review seems a bit short. Is it possible to briefly include additional references on classical DM methods and optimization-based DM approaches?
-
-
-7- I spotted several spelling and grammar errors throughout the manuscript. Please correct them and ensure that the formatting is consistent across all figures, captions, references, and equations.
-
-
-8- Please verify once more that RL has only been applied to static DM and not to dynamic DM in the existing literature. If this is still the case, it significantly strengthens the novelty and contributions of your work.
-\textbf{Found nothing of interest}
-
-
-9- You compared your results against random search. Are there other baselines that could be included for comparison? If possible, consider adding at least one additional baseline in the simulation results. Otherwise, it would be useful to investigate alternative baselines and be prepared to discuss them if questions arise during the defense.
-\textbf{Done, Added CEM}
-
-
-10- The curriculum design is well motivated and represents a solid contribution of your work. Therefore, if you can quantitatively demonstrate (with a simulation figure) that PPO without the curriculum fails while PPO with the curriculum succeeds, the results would be  stronger and  provide clearer evidence of the effectiveness of the proposed training strategy.
-\textbf{Added in chapter 5, referenced when talking about curriculum learning}
-
-
-12- \textbf{NOTE: If we can confirm comment 8 and add numerical results of another baseline from comment 9, I think that we will have enough strong results to prepare a paper for publication}
- }
-
-\textcolor{magenta}{In addition to Irched's comments, here are some minor ones:
-\\
-11- for all acronyms, please use acronyms or glossaries packages, as the management is much easier, it avoids repetitions, and automatically compiles the list of acronyms (I think you can find many examples online, if you don't manage to use it I can help you out with some examples);\textbf{Done}
-\\
-12- when referencing some parts of the thesis, also use the name; for instance, if you reference Chapter 3, please use \chaptername~\ref{cap:chapter3}, to avoid ambiguities; I would use \texttt{figurename}, \texttt{chaptername}, \texttt{tablename} and so on, which are easir to be managed if you want to modify the names for all -- you can also define \texttt{sectionname} for your convenience; \textbf{Done, I have to check on chosen names}
+\textcolor{magenta}{Additional comments:
+- to avoid the expansion of acronyms in the list of figures, put \texttt{acs\{\}} instead of \texttt{ac\{\}} (or analogous comments if you use glossaries) in the figure captions;\\ \textbf{Done, switched all\gls{} in captions to acs\{\}}
+- when defining an acronym, I wouldn't use capital letters, unless it requires so (e.g., ``dynamic directional modulation (DDM)'' and ``additive white Gaussian noise (AWGN)'');\\ \textbf{Done}
+- the commonly used mapping is the Gray one, in which neighbors differ from each other by exactly one bit, in order to reduce the bit error rate; please modify Fig. 2.1, so that 10 and 11 are swapped;\\ \textbf{Done, changed image to one with gray mapping}
+- in Sect. 2.2, I would place a figure that sketches the structure of a ULA, to let readers who are not familiar with it to better grasp the main system parameters;\\ \textbf{Done, added Fig.~\ref{fig:ula_structure} (generated with imago/plot/paper/ula\_structure.py)}
+- I would use the black-filled dot as the item symbol for bullet lists (already changed by myself);\\ \textbf{Done}
+- do not use capital letters after ';';\\ \textbf{Done}
+- use \texttt{} when introducing software-related strings, such as uv and requirements.txt (page 13);\\ \textbf{Done}
+- I would use $\delta_\varphi$ instead of $\delta\varphi$, I found it clearer and unambiguous ($\delta$ might seem to be a multiplicative factor);\\ \textbf{Done}
+- use $^\star$ instead of $^*$ (to avoid inconsistent notation);\\ \textbf{Done}
+- do not use Subsection, Section is enough (the crossreference with more digits tells you that this is a subsection) (already changed by myself);
+\textbf{Done}
+- Chapter 4, rather than Validation, appears to be Validation scenario setup; as Irched suggests, I would move it as the preliminary part of Model results;\\ \textbf{Done, merged into Chapter~\ref{cap:chapter5} as \sectionname~\ref{sec:validation_methodology}}
+- it would be useful to provide an acronym list;\\ \textbf{Done, configured via glossaries-extra (\textbackslash printunsrtglossary), cleaned up duplicate \textbackslash makeglossaries and a dead \textbackslash glsaddall call; still need to check rendered page}
+- units of measures should be in roman, not in italic (e.g., page 45: $0.7ms$ should be $0.7\,\textrm{ms}$ -- you could define some macros that might be helpful, e.g., \texttt{\textbackslash newcommand\{\textbackslash ms\}\{\textbackslash,\textbackslash mathrm\{ms\}\}}, so as to use $0.7\ms$);\\ \textbf{Done, checked all instances (ms via \textbackslash ms, dB via \textbackslash,\textbackslash text\{dB\}, degrees via \textbackslash degree symbol)}
+Comments on the results:\\
+- Fig. 4.5: I didn't get the main take-home message; if the minimum Eve BER is below the target one, shouldn't it be a negative result? Same thing for Fig. 4.17(c) and Fig. 4.20(c);\\
+- Fig. 4.15(b): what are the results for CEM and random search? This plot is not clear, and not thoroughly commented in the text;\\
+- I would also show the time needed to compute a solution when training with N=5 and searching for a solution with N=8, compared with random search and CEM, to emphasize the effectiveness of the proposed method;\\
+- the statement "This observation provides ... difficulties encountered during training." is a very interesting conclusion; I would add further details, to better clarify what these difficulties are, in order to provide some useful take-home messages for the readers;\\
+- to better illustrate how the proposed algorithm works, I would also plot the beampattern responses as function of time, to illustrate the time evolution of the solutions computed by the PPO;\\
+- where do you use all the quantities introduced at the beginning of Chapter 4 (e.g., all losses and the explained variance);\\
+- I would reduce the file size of the I/Q plans, that sometimes cause issues on the pdf reader -- such high resolution is not actually needed :)\\
+- general comment: for those (like me) who are not familiar with learning techniques (and in particular the ones proposed in this thesis), the numerical results may appear to be somewhat intangible and not easily linked with the physical problem it aims at solving; I would make some effort to better show how this is one-to-one related to the original problem, in order to strengthen the link (and avoid possible objections from the reviewers -- I'm not thinking at the thesis itself, which is definitely excellent, but I'm raising the bar and rather targeting a possible submission for publication).\\
 }
-
-
-\textcolor{magenta}{(I would use the \texttt{align} environment, as it will make it easier to write down equations; you can use the asterisk (align*) if you want to get rid of equation numbering; however, as a recommendation, I would number all equations, even those that you are not going to cross-reference). \textbf{Done, kept numbers}}
 
 
 Due to the broadcast nature of wireless communication channels, ensuring confidentiality and integrity is a fundamental challenge. Traditionally, the majority of security guarantees are implemented through cryptographic-based mechanisms in the upper layers of transmission. However,\gls{PLS}\cite{physec} has emerged as a complementary approach that exploits the inherent characteristics of the wireless channel between a legitimate transmitter (Alice) and the legitimate receiver (Bob) to secure the transmission.\gls{DM} is a\gls{PLS} technique that utilizes the spatial characteristics of the legitimate wireless channel such that a signal sent in a desired direction will be correctly demodulated only along a desired spatial direction while appearing disrupted in all other directions.\\
@@ -70,18 +49,19 @@ There are important use cases that require\gls{DM} to function, such as:
 Conventional (static)\gls{DM} schemes are vulnerable to advanced eavesdropping strategies, particularly when channel conditions are partially known or can be estimated.\gls{DDM} addresses this limitation by randomizing the array weight for each transmission, see \sectionname~\ref{sec:directional_modulation} for further details. This technique has desirable security properties but has minimal adoption due to its inability to satisfy both timing and quality constraints at the same time.
 \section{Related works}
 
-Having explored the growing demand for dynamic directional modulation, we analyzed the current literature landscape of this field. In particular, this survey \cite{chen2025survey} highlights the scarcity of research on the integration of\gls{AI} techniques into\gls{DM} systems and also the need for more computationally efficient systems for dynamic directional modulation. \\
+Directional modulation originated as a phased-array technique, first formalized with phase configurations computed directly for single-direction transmission and via a genetic algorithm for the harder multi-directional case \cite{daly2009dm}, and later demonstrated in hardware \cite{daly2010demo}. Subsequent work shifted toward closed-form and optimization-based synthesis, including vector-based \cite{ding2014vector} and orthogonal-vector, artificial-noise-informed \cite{ding2015orthogonal} approaches capable of synthesizing multi-beam transmitters that serve several legitimate directions simultaneously; see \cite{ding2016review} for a broader review of this line of work. These methods compute a single deterministic configuration for a given target geometry and must be re-solved whenever the target direction changes, offering no native mechanism for the per-symbol configuration diversity that\gls{DDM} requires.\\
 \\
-Similar\gls{RL} approaches have been explored \cite{li2026rlris} successfully for\gls{DM}, however they do not explore the feasibility of\gls{RL} applied to\gls{DDM} systems. To the best of our knowledge, a\gls{RL} approach to\gls{DDM} has not been studied before. \\
+\gls{DDM} itself - varying the array configuration over time rather than fixing it once at design time -- has also been explored, but predominantly through simple, non-learned randomization. Hardware implementations have realized\gls{DDM} via software-defined radio \cite{cabrerahernandez2019sdr} and vector-modulator architectures \cite{cabrerahernandez2019vm}, while \cite{goriasilva2023lpddm} shows that a low-power\gls{DDM} variant based on randomly switching the transmitting antenna element leaks exploitable information to an eavesdropper. In all three, the randomization rule is fixed by construction rather than learned or shaped to jointly satisfy beamforming quality and secrecy.\\
 \\
-The dynamic nature of\gls{DM} introduces constraints that significantly narrow the design space: configurations must be generated at the symbol rate and repeated transmissions toward the same direction must yield distinct configurations to preserve the stochastic character of the signal observed by an eavesdropper outside the protected angular region.\gls{RL}, framed as a contextual bandit, addresses these constraints simultaneously: it optimizes a reward signal, generalizes across angles, and produces stochastic outputs through its policy. A detailed justification of this design choice relative to alternative approaches is provided in Section~\ref{sec:reinforcement_learning}
+Having explored the growing demand for dynamic directional modulation, we also analyzed the current literature on\gls{AI}-assisted\gls{DM}. This survey \cite{chen2025survey} highlights the scarcity of research on the integration of\gls{AI} techniques into\gls{DM} systems and the need for more computationally efficient\gls{DDM} systems. Similar\gls{RL} approaches have been explored \cite{li2026rlris} successfully for\gls{DM}, however they do not explore the feasibility of\gls{RL} applied to\gls{DDM} systems. To the best of our knowledge, a\gls{RL} approach to\gls{DDM} has not been studied before: existing\gls{DDM} implementations rely on fixed, non-learned randomization rules \cite{cabrerahernandez2019sdr,cabrerahernandez2019vm,goriasilva2023lpddm}, while existing optimization-based\gls{DM} synthesis methods produce a single configuration with no native mechanism for per-symbol diversity \cite{ding2014vector,ding2015orthogonal}. \\
+\\
+The dynamic nature of\gls{DM} introduces constraints that significantly narrow the design space: configurations must be generated at the symbol rate and repeated transmissions toward the same direction must yield distinct configurations to preserve the stochastic character of the signal observed by an eavesdropper outside the protected angular region.\gls{RL}, framed as a contextual bandit, addresses these constraints simultaneously: it optimizes a reward signal, generalizes across angles, and produces stochastic outputs through its policy. A detailed justification of this design choice relative to alternative approaches is provided in \sectionname~\ref{sec:reinforcement_learning}.
 \section{Thesis structure}
 This thesis will examine first the issue of dynamic and static directional modulation in the context of\gls{PLS}, and explain how to possibly exploit a reward approach to train an\gls{AI} model that will provide\gls{DDM}. The concepts will be introduced gradually, requiring minimal prior knowledge on the topics of\gls{AI} and telecommunication. Here is a brief outline of the structure of the thesis:
 
 \begin{itemize}
 	\item \textbf{Chapter 2:} will introduce the main theoretical concepts of telecommunication and\gls{AI} model training;
 	\item \textbf{Chapter 3:} will describe the tools utilized to train the model, the implementation details, and the parameters chosen;
-	\item \textbf{Chapter 4:} will explain the methods used to validate the model;
-	\item \textbf{Chapter 5:} will present and analyze the experimental results;
-	\item \textbf{Chapter 6:} will contain the conclusions of this work, along with possible improvements and generalizations that can be introduced in the future.
+	\item \textbf{Chapter 4:} will explain the methods used to validate the model and present and analyze the experimental results;
+	\item \textbf{Chapter 5:} will contain the conclusions of this work, along with possible improvements and generalizations that can be introduced in the future.
 \end{itemize}

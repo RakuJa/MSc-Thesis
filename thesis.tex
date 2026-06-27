@@ -79,8 +79,6 @@
 
 \input{thesis-config}
 
-\makeglossaries
-
 \begin{document}
 \frontmatter
 \input{intro-ending/frontispiece}
@@ -94,12 +92,10 @@
 \input{chapters/chapter-1}             % Introduction
 \input{chapters/chapter-2}             % Theoretical basis
 \input{chapters/chapter-3}             % Tools utilized to train the model, parameters chosen
-\input{chapters/chapter-4}             % Explain and compare methods to validate model
-\input{chapters/chapter-5}             % Show the data gathered and analyze it
+\input{chapters/chapter-5}             % Validation methodology, data gathered and analysis
 \input{chapters/chapter-6}             % Conclusions
 \appendix
 
-\glsaddall[types={main}]
 \printunsrtglossary[type=\acronymtype, style=nameparen]
 \backmatter
 \printbibliography
