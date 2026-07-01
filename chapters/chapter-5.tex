@@ -139,6 +139,8 @@ To characterize system performance,\gls{BER} and\gls{SER} are evaluated as funct
 
 \section{Training results}
 
+Before reporting the\gls{DDM} configurations the trained policy produces, we examine whether the learning process itself behaved as expected. In\gls{RL}, a policy can converge to a numerically stable solution that is nonetheless poorly behaved: the network weights may stop changing while the agent is still stuck in a suboptimal region, or the training signal may have been too noisy to learn anything reliable. The diagnostics in this section are the standard checks that distinguish genuine convergence from these failure modes. For a reader unfamiliar with\gls{RL}, the key question each metric answers is always the same: \emph{did the agent receive a clear, stable learning signal, and did it respond to it in a controlled way?} Where the answer is yes, the inference results that follow can be trusted to reflect what the policy has actually learned rather than an artefact of a troubled training run.
+
 \subsection{Policy Parameters}
 \figurename~\ref{fig:policy_parameters} illustrates the evolution of the key policy parameters throughout training: the action standard deviation and the learning rate.
 
@@ -153,7 +155,7 @@ The clip range $\varepsilon$ is the central stability mechanism of\gls{PPO}, bou
 \begin{equation}
     L^{\mathrm{CLIP}}(\theta) = \mathbb{E}_t \left[ \min \left( r_t(\theta)\hat{A}_t,\ \mathrm{clip}(r_t(\theta),\, 1 - \varepsilon,\, 1 + \varepsilon)\hat{A}_t \right) \right]
 \end{equation}
-where $r_t(\theta) = \pi_\theta(a_t | s_t)/ \pi_{\theta_\mathrm{old}}(a_t | s_t)$. The clip range remained fixed at the default value of $\varepsilon = 0.2$ throughout training, as recommended by Schulman et al.~\cite{schulman2017ppo}. Its stability confirms that no adaptive clipping schedule was applied, and that the constraint was enforced uniformly across all gradient updates. 
+where $r_t(\theta) = \pi_\theta(a_t | s_t)/ \pi_{\theta_\mathrm{old}}(a_t | s_t)$. Each gradient update is computed from rollout data collected under the \emph{old} policy $\pi_{\theta_\mathrm{old}}$; if a single update pushes the new policy $\pi_\theta$ too far from it, that data stops being a reliable description of how the new policy actually behaves, and the next update is computed on misleading information. Clipping $r_t(\theta)$ to $[1-\varepsilon, 1+\varepsilon]$ removes the incentive for the optimiser to exploit this gap: once an action's probability has moved far enough from the old policy, that sample no longer contributes additional gradient, capping how much any single update can change the policy regardless of how large the underlying advantage estimate is. This matters most early in training, before any valid beamforming configuration has been found, where a single oversized update could throw the policy out of a fragile, newly-discovered feasible region. The clip range remained fixed at the default value of $\varepsilon = 0.2$ throughout training, the value recommended by Schulman et al.~\cite{schulman2017ppo} as a reasonable balance between update stability and the speed of policy improvement; its stability confirms that no adaptive clipping schedule was applied, and that this same bound was enforced uniformly across all gradient updates. 
 
 \subsubsection{Learning rate}
 The learning rate controls the step size of the Adam optimiser when updating the network weights. Training begins at $\alpha_{max} = 3 \times 10^{-4}$ and decays by a factor of $\delta = 0.998$ at the end of every rollout, down to a minimum of $\alpha_{min} = 1 \times 10^{-4}$. This slow decay lowers the effective step size as the policy matures, reducing the risk of overshooting near convergence. Once the curriculum reaches full constraint enforcement, the schedule additionally monitors two instability signals over a sliding window of $W = 30$ rollouts:
@@ -176,7 +178,7 @@ When either condition fires, the learning rate is linearly increased back to $\a
 \figurename~\ref{fig:ppo_diagnostic} reports three diagnostic metrics that characterise the quality of the policy updates and the critic's learning progress throughout training: the approximate KL divergence, the clip fraction, and the explained variance.
 
 \subsubsection{Approximate KL divergence}
-The approximate KL divergence measures how much the new policy has shifted from the old one following each gradient update, and serves as a key indicator of update stability. It is estimated as:
+The approximate KL divergence measures how much the new policy has shifted from the old one following each gradient update. Where the clip range of the previous section bounds this shift \emph{by construction}, the KL divergence is the empirically \emph{measured} outcome of that bound: it is the metric that confirms the clipping mechanism actually did its job, rather than just assuming it did. A small value means consecutive policies remain close to one another, so each update is a small, trustworthy refinement rather than a disruptive jump; a value that grows uncontrolled despite clipping would indicate that the policy is changing faster than the clip range can restrain, an early warning sign of instability. It is estimated as:
 
 \begin{equation}
     \widehat{D}_{\mathrm{KL}} \approx \mathbb{E}_t \left[ \log \frac{\pi_{\theta_\mathrm{old}}(a_t | s_t)}{\pi_\theta(a_t | s_t)} \right]
@@ -184,10 +186,10 @@ The approximate KL divergence measures how much the new policy has shifted from 
 The approximate KL divergence begins at approximately $0.027$, drops to a minimum of about $0.01$ within the first $1$-$2$ million timesteps, then rises and stabilises around $0.035$-$0.04$ for the remainder of training, consistently staying below the $0.05$ KL threshold marked in the figure. This sustained margin confirms that the clip range constraint ($\varepsilon = 0.2$) was effective in preventing excessively large policy updates throughout training.
 
 \subsubsection{Clip Fraction}
-The clip fraction reports the proportion of samples in each rollout batch for which the probability ratio $r_t(\theta) = \pi_\theta(a_t | s_t) / \pi_{\theta_\mathrm{old}}(a_t|s_t)$ exceeded the clip boundary, i.e. fell outside the interval $[1 - \varepsilon,\,1 + \varepsilon]$. The clip fraction starts at approximately $0.22$, dips to about $0.12$-$0.15$ over the same early window in which the approximate KL divergence dips, then rises and stabilises around $0.29$--$0.30$ for the remainder of training. This sustained, moderate clip fraction indicates that the policy continued to make non-trivial but non-destructive updates throughout training, mirroring the approximate KL divergence's rise to a stable plateau, rather than collapsing prematurely to a frozen, near-deterministic policy.
+The clip fraction reports the proportion of samples in each rollout batch for which the probability ratio $r_t(\theta) = \pi_\theta(a_t | s_t) / \pi_{\theta_\mathrm{old}}(a_t|s_t)$ exceeded the clip boundary, i.e. fell outside the interval $[1 - \varepsilon,\,1 + \varepsilon]$ and therefore had its contribution to the gradient capped as described above. It is a direct measurement of how often the clipping mechanism is actually doing work: a value near $0$ would mean the policy is barely changing between updates, a sign that learning has stalled, while a value close to $1$ would mean nearly every sample is being capped, suggesting the optimiser is constantly straining against the clip boundary and would update far more aggressively if allowed to. The clip fraction starts at approximately $0.22$, dips to about $0.12$-$0.15$ over the same early window in which the approximate KL divergence dips, then rises and stabilises around $0.29$--$0.30$ for the remainder of training. This sustained, moderate value, that is neither collapsing toward $0$ nor saturating toward $1$, indicates that the policy continued to make non-trivial but non-destructive updates throughout training, mirroring the approximate KL divergence's rise to a stable plateau, rather than collapsing prematurely to a frozen, near-deterministic policy.
 
 \subsubsection{Explained Variance}
-The explained variance quantifies how accurately the value function $V_\theta(s)$ predicts the empirical returns collected during rollouts:
+The critic's predictions feed directly into the actor's update: the advantage estimate $\hat{A}_t$ that drives the policy gradient loss of \subsectionname~\ref{sec:training_dynamics_baseline_losses} is built from the gap between the return actually observed and the return $V_\theta(s)$ predicted for that state, so an inaccurate critic turns this signal into noise the actor has to push through rather than learn from. The explained variance quantifies how accurately the value function $V_\theta(s)$ predicts the empirical returns collected during rollouts:
 
 \begin{equation}
     \mathrm{EV} = 1 - \frac{\mathrm{Var}(y - \hat{y})}{\mathrm{Var}(y)}
@@ -204,7 +206,7 @@ where $y$ denotes the observed returns and $\hat{y}$ the value function predicti
 
 \subsection{Training Convergence}
 
-\figurename~\ref{fig:training_convergence} presents the two primary convergence indicators over the course of training: the mean episode reward and the valid-action rate. The reward curve (left axis) reflects how well the agent is optimising the beamforming objective, while the valid rate (right axis) measures the fraction of timesteps in which the agent produced a configuration that satisfied all amplitude and phase constraints. 
+\figurename~\ref{fig:training_convergence} presents the two primary convergence indicators over the course of training: the mean episode reward and the valid-action rate. The reward curve (left axis) is the single scalar the optimiser maximises, combining beamforming quality and secrecy into one number (\chaptername~\ref{cap:chapter3}); its absolute value is not independently meaningful, since the contribution of any one objective - Bob's\gls{BER}, Eve's\gls{BER}, geometric validity - cannot be read off the total without inspecting that objective separately, which the\gls{BER} and validity metrics reported throughout this chapter exist to do. What the reward curve \emph{does} tell the reader directly is whether the policy is still improving or has plateaued. The valid-action rate (right axis) is the more directly interpretable of the two: it measures the fraction of timesteps in which the proposed configuration satisfied both the amplitude floor and the phase flatness constraints of \chaptername~\ref{cap:chapter3}, i.e.\ the fraction of proposed transmissions that would actually be physically realizable as a valid directional-modulation beam rather than discarded outright. By the end of training the mean episode reward stabilises at $\approx 58$ and the valid-action rate at $\approx 99.7\%$: the policy has converged, and the overwhelming majority of the configurations it proposes are usable.
 
 \begin{figure}[htbp]
     \centering
@@ -215,6 +217,7 @@ where $y$ denotes the observed returns and $\hat{y}$ the value function predicti
 \FloatBarrier
 
 \subsection{Training losses}
+\label{sec:training_dynamics_baseline_losses}
 
 \figurename~\ref{fig:training_losses} reports the four loss components optimised jointly by\gls{PPO} throughout training: the policy gradient loss, the value loss, the entropy loss, and the total combined loss. Monitoring these components is essential to distinguish between healthy optimisation dynamics and pathological behavior that may not be apparent from reward curves alone.
 
@@ -238,7 +241,7 @@ The entropy loss measures the randomness of the policy's action distribution:
 \begin{equation}
     L^{\mathrm{ENT}} = -\mathbb{E}_t \left[ H\!\left(\pi_\theta(\cdot \mid s_t)\right) \right] = \mathbb{E}_t \left[ \sum_a \pi_\theta(a \mid s_t) \log \pi_\theta(a \mid s_t) \right]
 \end{equation}
-A high-entropy policy is more exploratory, while a low-entropy policy is more deterministic. The entropy loss should gradually decrease over training as the policy becomes more confident.
+A high-entropy policy is more exploratory, while a low-entropy policy is more deterministic. Unlike the entropy of a discrete distribution, which is always non-negative, the differential entropy of the continuous Gaussian policy used here can itself turn negative once the per-action standard deviation falls below $1/\sqrt{2\pi e} \approx 0.24$. Consequently $L^{\mathrm{ENT}} = -H$ is expected to \emph{increase}, not decrease, as the policy concentrates over training, eventually crossing from negative to positive once the policy's spread narrows enough; a decreasing entropy loss would instead signal a policy growing \emph{more} exploratory.
 
 \subsubsection{Total Loss}
 
@@ -246,9 +249,9 @@ All three components are combined into a single scalar objective minimized by th
 \begin{equation}
     L^{\mathrm{TOTAL}} = L^{\mathrm{PG}} + c_1 \cdot L^{\mathrm{VF}} + c_2 \cdot L^{\mathrm{ENT}}
 \end{equation}
-Since $L^{\mathrm{ENT}} = -\mathbb{E}_t[H(\pi_\theta)]$ is itself non-positive, adding it (rather than subtracting it) is what rewards higher-entropy policies with a lower total loss, implementing the entropy bonus that encourages exploration.
+Adding $L^{\mathrm{ENT}}$ (rather than subtracting it) is what rewards higher-entropy policies with a lower total loss, implementing the entropy bonus that encourages exploration; because $L^{\mathrm{ENT}}$ can itself turn positive as the policy concentrates, this bonus weakens rather than vanishes once training has progressed far enough.
 
-As visualized in \figurename~\ref{fig:training_losses}, our losses behave in an ideal manner with values near $0$ at the end of the training.
+As visualized in \figurename~\ref{fig:training_losses}, the policy gradient, value, and total losses all settle close to $0$ by the end of training, while the entropy loss follows exactly the trajectory expected above: starting at $\approx -14.2$, it crosses from negative to positive around $7\times10^6$ timesteps and settles at $\approx +0.7$. This crossing point and final value are the reference against which the three training variations of \sectionname~\ref{sec:training_variation} are compared below.
 
 \begin{figure}[htbp]
     \centering
@@ -268,6 +271,8 @@ As visualized in \figurename~\ref{fig:training_losses}, our losses behave in an 
     \caption{BER metrics throughout training: legitimate user \acs{BER}, secrecy \acs{BER}, and the minimum \acs{BER} of all possible eavesdropper angles on a logarithmic scale. Dashed reference lines at $\mathrm{BER}=0.05$ and $\mathrm{BER}=0.5$ are included for orientation.}
     \label{fig:secrecy_performance}
 \end{figure}
+
+The minimum\gls{BER} curve settles at $0.0103$, below both the legitimate\gls{BER} ($0.0368$) and the $0.05$ target. This is not a training shortfall: $B_{e,\min}$ is, by definition, the easiest-to-decode angle across the \emph{entire} trained angular range, and with only $N=5$ complex degrees of freedom the array cannot keep the phase misaligned from the legitimate direction at every point of a continuum of eavesdropper angles. As $\varphi_e$ is swept, the array factor's phase necessarily wraps through every value multiple times, so some sidelobe will always land back close enough to the legitimate phase to be easily decoded; this is a structural limitation of any finite-aperture beamformer, not an artifact of incomplete convergence. \figurename~\ref{fig:eve_weak_angle_evolution} examines whether this worst-case angle at least relocates between stochastic draws, the way the deep null of \figurename~\ref{fig:model_beam_pattern_evolution} does, so that a fixed-position eavesdropper could not reliably exploit it, and shows that, empirically, it does not. Closing this gap, rather than only relocating it, would require additional spatial degrees of freedom dedicated explicitly to secrecy, such as the orthogonal-vector and artificial-noise-informed methods of \cite{ding2015orthogonal} discussed in \chaptername~\ref{cap:introduction} (\sectionname~\ref{cap:future_works}).
 \FloatBarrier
 \subsection{Constraint Satisfaction}
 
@@ -308,12 +313,12 @@ The transparent lines of matching color represent stochastic samples drawn from 
 \end{figure}
 \FloatBarrier
 
-To make the time-varying nature of\gls{DDM} tangible, \figurename~\ref{fig:model_beam_pattern_evolution} overlays $20$ consecutive stochastic beam patterns for a fixed target angle $\varphi^\star=30\degree$, on the same gain-vs-angle axes as \figurename~\ref{fig:model_beam_pattern} (cartesian and polar), with each curve colored by its symbol index rather than by target angle. The curves form a tight, color-independent bundle around the target direction at every time step, since every sampled configuration must satisfy the same amplitude and phase constraints there; everywhere else, colors are scattered with no temporal ordering, showing that the gain pattern is re-randomized at each symbol rather than drifting smoothly. For this $N=5$ array, the limited number of degrees of freedom concentrates most of the randomization into the position of a deep null that wanders across the angular range, rather than a wholesale repatterning of the entire sidelobe structure; an eavesdropper located outside the target direction therefore experiences a channel that changes unpredictably from symbol to symbol, while the legitimate receiver sees a stable, constraint-satisfying response throughout.
+To make the time-varying nature of\gls{DDM} tangible, \figurename~\ref{fig:model_beam_pattern_evolution} overlays $20$ consecutive stochastic beam patterns for a fixed target angle $\varphi^\star=30\degree$, on the same gain-vs-angle axes as \figurename~\ref{fig:model_beam_pattern} (cartesian and polar), with each curve colored by its symbol index rather than by target angle. The curves form a tight, color-independent bundle around the target direction at every time step, since every sampled configuration must satisfy the same amplitude and phase constraints there; everywhere else, colors are scattered with no temporal ordering, showing that the gain pattern is re-randomized at each symbol rather than drifting smoothly. For this $N=5$ array, the limited number of degrees of freedom concentrates most of the randomization into the position of a deep null that wanders across the angular range, rather than a wholesale repatterning of the entire sidelobe structure; an eavesdropper located outside the target direction therefore experiences a channel that changes unpredictably from symbol to symbol, while the legitimate receiver sees a stable, constraint-satisfying response throughout. Whether this wandering null is sufficient to relocate the worst-case eavesdropper angle between draws is examined in the context of the full spatial security profile below.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=1\textwidth]{images/chapter5/beam_pattern_evolution.pdf}
-    \caption{Beam pattern evolution over $20$ consecutive stochastic draws from the trained\acs{PPO} policy for a fixed target angle $\varphi^\star=30\degree$ (dashed line), shown in cartesian (left) and polar (right) coordinates as in \figurename~\ref{fig:model_beam_pattern}. Each curve is an independent transmission, colored by symbol index (time) rather than by target angle.}
+    \includegraphics[width=1.0\textwidth]{images/chapter5/beam_pattern_evolution.pdf}
+    \caption{Beam pattern evolution over $20$ consecutive stochastic draws from the trained \acs{PPO} policy for a fixed target angle $\varphi^\star=30\degree$ (dashed line), shown in cartesian (left) and polar (right) coordinates. Each curve is an independent transmission, colored by symbol index (time) rather than by target angle.}
     \label{fig:model_beam_pattern_evolution}
 \end{figure}
 \FloatBarrier
@@ -352,8 +357,7 @@ These results should be interpreted in the context of the present work's primary
 
 \figurename~\ref{fig:model_constellations} illustrate the relationship between array gain, modulation order, and noise margin. Symbol error rates are estimated over 50,000 Monte Carlo trials per modulation scheme.
 At $M = 2$ (BPSK), performance is near-perfect: the two symbol clouds are well-separated and entirely contained within their respective decision regions, yielding\gls{BER} $= 0.000$. The system operates comfortably above the noise floor despite the sub-ideal array gain, confirming that BPSK is robust to the gain loss introduced by stochastic beamforming. At $M = 4$ (QPSK), the constellation remains largely correct, with only isolated error points visible near decision boundaries, indicating that the inter-symbol distance is still sufficient at this SNR.
-The picture degrades substantially at $M = 8$, where the reduced angular separation between symbols ($45\degree$) brings the noise clouds into contact with adjacent decision regions, producing a\gls{BER} of $1.4 \times 10^{-2}$. While individual symbol clusters are still discernible, a non-negligible fraction of received points cross decision boundaries, particularly for symbols in close angular proximity. At $M = 16$, the system experiences catastrophic failure (SER $= 2.1\times10^{-1}$): the $22.5\degree$ inter-symbol spacing is irreconcilable with the noise variance induced by the limited array gain, and the received point cloud is almost uniformly distributed across decision regions, rendering reliable demodulation impossible at this SNR.\\
-These results establish a clear operating boundary for the proposed beamforming framework: modulation orders up to $M = 4$ are reliably supported at $E_s/N_0 = 10$~dB given the current array configuration and gain efficiency. Higher-order modulation would require either a larger array to recover gain, a higher operating SNR, or improvements on the gain-aware reward signal during training to steer the policy toward configurations that better preserve array gain.
+The picture degrades substantially at $M = 8$, where the reduced angular separation between symbols ($45\degree$) brings the noise clouds into contact with adjacent decision regions, producing a\gls{BER} of $1.4 \times 10^{-2}$. While individual symbol clusters are still discernible, a non-negligible fraction of received points cross decision boundaries, particularly for symbols in close angular proximity. At $M = 16$, the system experiences catastrophic failure (SER $= 2.1\times10^{-1}$): the $22.5\degree$ inter-symbol spacing is irreconcilable with the noise variance induced by the limited array gain, and the received point cloud is almost uniformly distributed across decision regions, rendering reliable demodulation impossible at this SNR. These results establish a clear operating boundary for the proposed beamforming framework: modulation orders up to $M = 4$ are reliably supported at $E_s/N_0 = 10$~dB given the current array configuration and gain efficiency. Higher-order modulation would require either a larger array to recover gain, a higher operating SNR, or improvements on the gain-aware reward signal during training to steer the policy toward configurations that better preserve array gain.
 
 \begin{figure}[htbp]
     \centering
@@ -382,6 +386,23 @@ These results establish a clear operating boundary for the proposed beamforming 
     \includegraphics[width=1\textwidth]{images/chapter5/secrecy_matrix.pdf}
     \caption{Secrecy matrix: \acs{BER} evaluated over a grid of legitimate-user and eavesdropper angles at fixed $E_s/N_0 = 10$~dB.}
     \label{fig:secrecy_matrix}
+\end{figure}
+\FloatBarrier
+The \gls{SER}-vs-angle profile and secrecy matrix confirm that vulnerability is concentrated near the target direction, but they aggregate over many symbols and do not reveal whether the specific worst-case eavesdropper angle - $B_{e,\min}$ of \figurename~\ref{fig:secrecy_performance} - is a fixed structural property of the trained policy or relocates between stochastic draws. A fixed worst-case angle is a persistent leak that a stationary eavesdropper can exploit over consecutive symbols; one that wanders (as the beam null of \figurename~\ref{fig:model_beam_pattern_evolution} does) would provide only a transient advantage. \figurename~\ref{fig:eve_weak_angle_evolution} answers this directly by drawing $30$ independent stochastic samples at $\varphi^\star=30\degree$ and locating, for each, the angle that minimises the eavesdropper \gls{BER}. The $30$ curves are coloured by symbol index as in \figurename~\ref{fig:model_beam_pattern_evolution}, so that a wandering weak point would appear as scattered markers spanning a wide angular range. Instead, the markers cluster tightly between $\varphi_e = 6\degree$ and $10\degree$ (mean $\approx 8\degree$, standard deviation $\approx 1.3\degree$) across all $30$ draws, a roughly $22\degree$ offset from $\varphi^\star$ that barely moves. The per-symbol action noise responsible for the wandering null is evidently too small to relocate the gross sidelobe envelope. Consequently, an eavesdropper stationed at this offset would retain a persistent decoding advantage over consecutive symbols, unlike the legitimate receiver whose stable reception is the intended outcome. This is revisited quantitatively for $N=8$ in \figurename~\ref{fig:ula8_eve_weak_angle_evolution}.
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1.0\textwidth]{images/chapter5/eve_weak_angle_evolution.pdf}
+    \caption{Eavesdropper \acs{BER} vs.\ azimuth angle for $30$ independent stochastic draws ($N=5$, $\varphi^\star=30\degree$, $E_s/N_0=10\,\text{dB}$), colored by symbol index. Top: the $30$ overlaid curves, with a marker at the angle minimising each curve (the per-draw worst-case eavesdropper). Bottom: the same worst-case angle plotted against symbol index, showing its position is essentially constant rather than wandering.}
+    \label{fig:eve_weak_angle_evolution}
+\end{figure}
+\FloatBarrier
+This was measured at a single target angle, $\varphi^\star=30\degree$; whether the weak angle's offset from $\varphi^\star$ is itself a fixed property of the trained policy, or instead varies with $\varphi^\star$, makes a practical difference for how exploitable the leak is. A fixed offset, valid for every direction the array could be asked to serve, is a single rule that an eavesdropper could learn once and reuse anywhere; an offset that changes with $\varphi^\star$ would instead force the eavesdropper to learn the geometry of this specific trained policy before it could be exploited at all, which is a weaker but still real threat. \figurename~\ref{fig:eve_weak_angle_vs_target} repeats the worst-case-angle measurement of \figurename~\ref{fig:eve_weak_angle_evolution} at $35$ target angles spanning the trained range, $\varphi^\star \in \{-85\degree, -80\degree, \dots, 85\degree\}$. The offset is \emph{not} constant: it decreases smoothly and roughly antisymmetrically from $+175\degree$ at $\varphi^\star=-85\degree$ to $-175\degree$ at $\varphi^\star=85\degree$, passing through $\pm 15\degree$ near broadside. Adding this offset back to $\varphi^\star$, however, shows that the \emph{absolute} worst-case angle stays anchored within roughly $\pm 15\degree$ of broadside for the entire range $\varphi^\star \in [-75\degree, 75\degree]$: the offset is exactly what is needed to keep pointing back at the same structurally weak region regardless of where the legitimate receiver is. This matches the broadside difficulty already identified in \sectionname~\ref{subsec:angle_dependant_constraint}: the same narrow feasible region that makes broadside directions hardest to serve as $\varphi^\star$ also leaves them persistently under-disrupted as $\varphi_e$. Only near the trained range's endfire edges ($|\varphi^\star| \gtrsim 75\degree$) does a different, competing sidelobe occasionally take over as the global minimum, visible as the discontinuities at the extremes of \figurename~\ref{fig:eve_weak_angle_vs_target}. The bottom panel shows the worst-case eavesdropper\gls{BER} hovering close to, and at several angles below, the $0.05$ target across the whole sweep, confirming this is not specific to $\varphi^\star=30\degree$.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1.0\textwidth]{images/chapter5/eve_weak_angle_vs_target.pdf}
+    \caption{Worst-case eavesdropper offset $\varphi_e - \varphi^\star$ (top) and the corresponding eavesdropper\gls{BER} (bottom), swept over $35$ target angles $\varphi^\star \in [-85\degree, 85\degree]$ with $K=10$ stochastic draws per angle ($N=5$, $E_s/N_0=10\,\text{dB}$). Blue dots are individual draws; the red line is the per-angle median.}
+    \label{fig:eve_weak_angle_vs_target}
 \end{figure}
 \FloatBarrier
 
@@ -433,8 +454,10 @@ It is worth noting that this comparison, while informative of raw search efficie
     \label{fig:benchmark_latency}
 \end{figure}
 \FloatBarrier
+The same benchmark is repeated for the $N=8$ array in \subsectionname~\ref{subsec:ula8_vs_random_search_cem}, and the two are overlaid to isolate the effect of array size in \subsectionname~\ref{subsec:search_cost_n5_vs_n8}.
 
 \section{Training variation}
+\label{sec:training_variation}
 
 The three experiments presented in this section explore modifications to the baseline $N=5$ system:
 \begin{enumerate}
@@ -460,28 +483,46 @@ Analysis of 100 stochastic inference draws shows that the flattened-curriculum m
         \caption{Mean episode reward and valid-action rate}
         \label{fig:no_curriculum_training_convergence}
     \end{subfigure}
-    
+
     \vspace{5pt}
-    
+
     \begin{subfigure}{\textwidth}
         \centering
         \includegraphics[width=0.8\textwidth]{images/chapter5/no_curriculum/policy_parameters.pdf}
         \caption{Action standard deviation and learning rate}
         \label{fig:no_curriculum_training_params}
     \end{subfigure}
-    
+
     \vspace{5pt}
-    
+
     \begin{subfigure}{\textwidth}
         \centering
         \includegraphics[width=0.8\textwidth]{images/chapter5/no_curriculum/secrecy_performance.pdf}
         \caption{BER metrics (legitimate user, secrecy, and minimum eavesdropper)}
         \label{fig:no_curriculum_training_ber}
     \end{subfigure}
-    
+
     \caption{Training overview for the curriculum flattened $N=5$ \acs{ULA}. Top: mean episode reward and valid-action rate. Middle: action standard deviation and learning rate. Bottom: \acs{BER} metrics (legitimate user, secrecy, and minimum eavesdropper).}
     \label{fig:no_curriculum_training}
 \end{figure}
+
+The training-time diagnostics confirm, rather than merely accompany, the harder optimisation landscape argued above. In \figurename~\ref{fig:no_curriculum_training_losses}, the policy gradient, value, and total losses settle close to $0$ as in the baseline (\figurename~\ref{fig:training_losses}), but the entropy loss lags behind: it is still negative at $10^7$ timesteps, settling at $\approx -1$, instead of crossing into positive territory by $\approx +0.7$ as the curriculum-trained baseline does by $7\times10^6$ timesteps (\subsectionname~\ref{sec:training_dynamics_baseline_losses}). Since a less positive entropy loss corresponds to a less concentrated policy, this is direct training-time evidence that the flattened-curriculum policy never commits as confidently to a solution, consistent with its failure to discover the element-silencing strategy described above. \figurename~\ref{fig:no_curriculum_ppo_diagnostics} shows the remaining diagnostics following essentially the same trajectory as the baseline, with explained variance settling slightly lower ($\approx 0.83$ against $\approx 0.9$): removing the curriculum degrades the quality of the converged policy without destabilising the underlying clipped policy-gradient and value-fitting mechanics themselves.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{images/chapter5/no_curriculum/training_losses.pdf}
+    \caption{Training losses for the curriculum flattened $N=5$ \acs{ULA}: policy gradient, value, entropy, and total loss.}
+    \label{fig:no_curriculum_training_losses}
+\end{figure}
+\FloatBarrier
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1\textwidth]{images/chapter5/no_curriculum/ppo_diagnostics.pdf}
+    \caption{\acs{PPO} diagnostics for the curriculum flattened $N=5$ \acs{ULA}: approximate KL divergence, clip fraction, and explained variance.}
+    \label{fig:no_curriculum_ppo_diagnostics}
+\end{figure}
+\FloatBarrier
 
 \begin{figure}[htbp]
     \centering
@@ -529,7 +570,7 @@ where $a_0$ is a slope-correction action with scale $\sigma_s = \pi/4$, meaning 
 \figurename~\ref{fig:physics_informed_inference} and \figurename~\ref{fig:diversity_analysis_physics_informed} summarizes the inference behaviour while \figurename~\ref{fig:physics_informed_training} summarize the training dynamics.
 
 \subsubsection{Results}
-The training dynamics are stable and broadly similar to the baseline while the expressive power of the parameterisation is reduced and visible in the diversity analysis (\figurename~\ref{fig:diversity_analysis_physics_informed}: the fraction of duplicate solutions is substantially higher than in the baseline, indicating that the policy converges to a narrower set of configurations. This is a structural consequence of the $\pm\frac{\pi}{4}$ perturbation bound. Valid\gls{DDM} steering vectors tend to cluster near the\gls{DFT} ramp, so the constrained action space covers the feasible region but leaves little room for structurally distinct solutions. This result is nonetheless informative, demonstrating that physics-informed parameterisation is a viable solution and that a more expressive variant could potentially close the diversity gap and rival the purely gradient-driven baseline. 
+The training dynamics are stable and broadly similar to the baseline while the expressive power of the parameterisation is reduced and visible in the diversity analysis (\figurename~\ref{fig:diversity_analysis_physics_informed}: the fraction of duplicate solutions is substantially higher than in the baseline, indicating that the policy converges to a narrower set of configurations. This is a structural consequence of the $\pm\frac{\pi}{4}$ perturbation bound. Valid\gls{DDM} steering vectors tend to cluster near the\gls{DFT} ramp, so the constrained action space covers the feasible region but leaves little room for structurally distinct solutions. This result is nonetheless informative, demonstrating that physics-informed parameterisation is a viable solution and that a more expressive variant could potentially close the diversity gap and rival the purely gradient-driven baseline.
 
 \begin{figure}[p]  % Force to its own page
     \centering
@@ -539,28 +580,48 @@ The training dynamics are stable and broadly similar to the baseline while the e
         \caption{Mean episode reward and valid-action rate}
         \label{fig:physics_informed_training_convergence}
     \end{subfigure}
-    
+
     \vspace{5pt}
-    
+
     \begin{subfigure}{\textwidth}
         \centering
         \includegraphics[width=0.8\textwidth]{images/chapter5/physics_informed/policy_parameters.pdf}
         \caption{Action standard deviation and learning rate}
         \label{fig:physics_informed_training_params}
     \end{subfigure}
-    
+
     \vspace{5pt}
-    
+
     \begin{subfigure}{\textwidth}
         \centering
         \includegraphics[width=0.8\textwidth]{images/chapter5/physics_informed/secrecy_performance.pdf}
         \caption{BER metrics (legitimate user, secrecy, and minimum eavesdropper)}
         \label{fig:physics_informed_training_ber}
     \end{subfigure}
-    
+
     \caption{Training overview for the physics-informed action parameterisation}
     \label{fig:physics_informed_training}
 \end{figure}
+
+As in the baseline (\figurename~\ref{fig:secrecy_performance}), the minimum\gls{BER} curve in \figurename~\ref{fig:physics_informed_training_ber} settles below the legitimate\gls{BER} and the $0.05$ target ($0.0012$ against $0.0151$); the same finite-degrees-of-freedom argument applies, and is in fact tighter here since the $\pm\frac{\pi}{4}$ perturbation bound further restricts the set of distinguishable sidelobe structures available to the policy.
+
+The entropy loss in \figurename~\ref{fig:physics_informed_training_losses} makes this restriction visible already during training, well before the diversity analysis below confirms it at inference time: it crosses from negative to positive earlier than the baseline ($\approx 4\times10^6$ timesteps against $\approx 7\times10^6$, \subsectionname~\ref{sec:training_dynamics_baseline_losses}) and settles at a substantially higher final value ($\approx +4$ against $\approx +0.7$). A higher entropy loss means lower policy entropy, i.e.\ a more concentrated action distribution, so the policy commits to a narrower set of configurations sooner and more strongly than the baseline does -- the training-time fingerprint of the higher duplicate rate that \figurename~\ref{fig:diversity_analysis_physics_informed} reports below. The remaining diagnostics in \figurename~\ref{fig:physics_informed_ppo_diagnostics} stay close to the baseline's values ($\mathrm{KL}\approx0.03\text{--}0.04$, clip fraction $\approx0.30$, explained variance $\approx0.85$), indicating that this reduced diversity is a deliberate, stable consequence of the constrained action space rather than a sign of training instability.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{images/chapter5/physics_informed/training_losses.pdf}
+    \caption{Training losses for the physics-informed action parameterisation: policy gradient, value, entropy, and total loss.}
+    \label{fig:physics_informed_training_losses}
+\end{figure}
+\FloatBarrier
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1\textwidth]{images/chapter5/physics_informed/ppo_diagnostics.pdf}
+    \caption{\acs{PPO} diagnostics for the physics-informed action parameterisation: approximate KL divergence, clip fraction, and explained variance.}
+    \label{fig:physics_informed_ppo_diagnostics}
+\end{figure}
+\FloatBarrier
 
 \begin{figure}[htbp]
     \centering
@@ -617,28 +678,66 @@ The experiment compounds the limitations identified in \subsectionname~\ref{subs
         \caption{Mean episode reward and valid-action rate}
         \label{fig:ula8_training_convergence}
     \end{subfigure}
-    
+
     \vspace{5pt}
-    
+
     \begin{subfigure}{\textwidth}
         \centering
         \includegraphics[width=0.8\textwidth]{images/chapter5/ula8/policy_parameters.pdf}
         \caption{Action standard deviation and learning rate}
         \label{fig:ula8_training_params}
     \end{subfigure}
-    
+
     \vspace{5pt}
-    
+
     \begin{subfigure}{\textwidth}
         \centering
         \includegraphics[width=0.8\textwidth]{images/chapter5/ula8/secrecy_performance.pdf}
         \caption{BER metrics (legitimate user, secrecy, and minimum eavesdropper)}
         \label{fig:ula8_training_ber}
     \end{subfigure}
-    
+
     \caption{Training overview for the $N=8$ \acs{ULA}. Top: mean episode reward and valid-action rate. Middle: action standard deviation and learning rate. Bottom: \acs{BER} metrics (legitimate user, secrecy, and minimum eavesdropper).}
     \label{fig:ula8_training}
 \end{figure}
+
+Scaling to $N=8$ pushes the entropy-loss trend identified for the $N=5$ physics-informed run (baseline crossing at $\approx 7\times10^6$ timesteps with final value $\approx +0.7$; $N=5$ physics-informed crossing at $\approx 4\times10^6$ with final value $\approx +4$, \subsectionname~\ref{sec:training_dynamics_baseline_losses}) one step further: \figurename~\ref{fig:ula8_training_losses} shows the entropy loss never crossing into positive territory at all, plateauing around $-12$ for the remainder of training. The doubled action dimensionality ($2N=16$ against $10$) makes the raw entropy-loss magnitude not directly comparable to the $N=5$ runs, but the qualitative fact that it never reaches the confidently-concentrated, positive-entropy-loss regime the other two runs reach is dimension-independent, and matches exactly the inference-time observation, reported above, that the $N=8$ policy keeps almost every element at near-full amplitude rather than learning to confidently silence any of them: the policy never settles into the narrow, low-entropy action distribution that confident silencing would require. \figurename~\ref{fig:ula8_ppo_diagnostics} surfaces a second, independent instability: the explained variance briefly turns negative around $1\text{--}1.5\times10^6$ timesteps, i.e.\ the critic is briefly worse than predicting the mean reward, before recovering to $\approx 0.8$ by the end of training; this is the training-time signature of the harder credit-assignment problem already attributed to the larger action space at the start of \subsectionname~\ref{subsec:ula8}. The approximate KL divergence is also visibly noisier in its raw samples than either $N=5$ run, with transient spikes above the $0.05$ threshold during the same early window, though the smoothed trend remains safely below it throughout, indicating that the clip range $\varepsilon=0.2$ continued to provide an effective stability margin despite the rougher optimisation landscape.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{images/chapter5/ula8/training_losses.pdf}
+    \caption{Training losses for the $N=8$ \acs{ULA}: policy gradient, value, entropy, and total loss.}
+    \label{fig:ula8_training_losses}
+\end{figure}
+\FloatBarrier
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1\textwidth]{images/chapter5/ula8/ppo_diagnostics.pdf}
+    \caption{\acs{PPO} diagnostics for the $N=8$ \acs{ULA}: approximate KL divergence, clip fraction, and explained variance.}
+    \label{fig:ula8_ppo_diagnostics}
+\end{figure}
+\FloatBarrier
+
+Repeating the per-draw worst-case-angle analysis of \figurename~\ref{fig:eve_weak_angle_evolution} for this $N=8$ policy (\figurename~\ref{fig:ula8_eve_weak_angle_evolution}) shows the same angle pinned even more rigidly: across $30$ independent stochastic draws at $\varphi^\star=30\degree$, the worst-case angle falls at $\varphi_e=13\degree$ or $14\degree$ in every single draw. This is consistent with the reduced solution diversity already noted for the physics-informed parameterisation in \subsectionname~\ref{subsec:physics_informed}: the $\pm\frac{\pi}{4}$ perturbation bound leaves so little room for distinct configurations that not only the gross sidelobe envelope, but effectively the entire pattern, is reproduced from draw to draw.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1.0\textwidth]{images/chapter5/ula8/eve_weak_angle_evolution.pdf}
+    \caption{Eavesdropper \acs{BER} vs.\ azimuth angle for $30$ stochastic draws of the $N=8$ policy ($\varphi^\star=30\degree$, $E_s/N_0=10\,\text{dB}$), colored by symbol index. Top: the $30$ overlaid \acs{BER}-vs-angle curves, with a marker at each per-draw worst-case angle. Bottom: the same worst-case angle plotted against symbol index, showing it is essentially frozen at $\varphi_e \approx 13\text{--}14\degree$ across all draws.}
+    \label{fig:ula8_eve_weak_angle_evolution}
+\end{figure}
+\FloatBarrier
+
+Sweeping the target angle as in \figurename~\ref{fig:eve_weak_angle_vs_target} (\figurename~\ref{fig:ula8_eve_weak_angle_vs_target}) shows a markedly different, and more concerning, pattern for $N=8$: the offset $\varphi_e-\varphi^\star$ stays close to a single value, between $-16\degree$ and $-24\degree$, across nearly the entire trained range $\varphi^\star \in [-45\degree, 80\degree]$, rather than tracking broadside the way the $N=5$ offset does. This is the signature of the physics-informed parameterisation: because every configuration is a small, bounded correction to the same\gls{DFT} ramp (\subsectionname~\ref{subsec:physics_informed}), the array factor for any $\varphi^\star$ is close to a shifted copy of the same canonical pattern, so the position of its dominant sidelobe relative to the main lobe is nearly invariant to $\varphi^\star$ instead of being anchored to an absolute region. Only for $\varphi^\star \lesssim -45\degree$, approaching endfire, does a different lobe take over and the offset jump to the $120$--$175\degree$ range. A roughly constant offset valid across most of the operating range is a stronger, more directly exploitable regularity than the broadside-anchored pattern found at $N=5$.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1\textwidth]{images/chapter5/ula8/eve_weak_angle_vs_target.pdf}
+    \caption{Worst-case eavesdropper offset $\varphi_e - \varphi^\star$ (top) and the corresponding eavesdropper\gls{BER} (bottom) for the $N=8$ policy, swept over $35$ target angles $\varphi^\star \in [-85\degree, 85\degree]$ with $K=10$ stochastic draws per angle ($E_s/N_0=10\,\text{dB}$). Blue dots are individual draws; the red line is the per-angle median.}
+    \label{fig:ula8_eve_weak_angle_vs_target}
+\end{figure}
+\FloatBarrier
 
 \begin{figure}[htbp]
     \centering
@@ -671,8 +770,9 @@ The experiment compounds the limitations identified in \subsectionname~\ref{subs
 \FloatBarrier
 
 \subsubsection{Search Benchmark}
+\label{subsec:ula8_vs_random_search_cem}
 
-Following the same protocol as \sectionname~\ref{sec:benchmark},\figurename~\ref{fig:ula8_benchmark_efficiency} and\figurename~\ref{fig:ula8_benchmark_latency} repeat the comparison against random search and\gls{CEM} for the $N=8$ physics-informed policy. All three methods reach $100\%$ success across the full angular range.\gls{CEM} keeps a similarly modest edge over random search as at $N=5$ ($1.4\times$ fewer median tries, against $1.6\times$ at $N=5$), but the\gls{PPO} model's advantage over both baselines widens considerably with the larger array: $96\times$ fewer tries than\gls{CEM} and $108\times$ fewer than random search, up from $15\times$ and $17\times$ at $N=5$. The learned policy still finds a valid configuration on the first stochastic draw at the median angle, regardless of array size.
+Following the same protocol as \sectionname~\ref{sec:benchmark}, \figurename~\ref{fig:ula8_benchmark_efficiency} and \figurename~\ref{fig:ula8_benchmark_latency} repeat the comparison against random search and\gls{CEM} for the $N=8$ physics-informed policy. All three methods reach $100\%$ success across the full angular range.\gls{CEM} keeps a similarly modest edge over random search as at $N=5$ ($1.4\times$ fewer median tries, against $1.6\times$ at $N=5$), but the\gls{PPO} model's advantage over both baselines widens considerably with the larger array: $96\times$ fewer tries than\gls{CEM} and $108\times$ fewer than random search, up from $15\times$ and $17\times$ at $N=5$. The learned policy still finds a valid configuration on the first stochastic draw at the median angle, regardless of array size.
 
 \begin{figure}[htbp]
     \centering
@@ -682,7 +782,7 @@ Following the same protocol as \sectionname~\ref{sec:benchmark},\figurename~\ref
 \end{figure}
 \FloatBarrier
 
-\figurename~\ref{fig:ula8_benchmark_latency} reports the corresponding wall-clock latency: $11.4\ms$ for random search, $2.3\ms$ for\gls{CEM}, and $0.37\ms$ for the learned policy ($31.0\times$ and $6.2\times$ faster, respectively). Despite the much larger gap in required samples, the wall-clock cost of random search and\gls{CEM} barely changes between $N=5$ and $N=8$ ($11.0\to11.4\ms$ and $1.9\to2.3\ms$): at this array size the fixed per-batch overhead of the validator dominates over the cost of evaluating the additional elements, so the dimensionality penalty shows up almost entirely in the number of attempts needed rather than in the time per attempt.
+\figurename~\ref{fig:ula8_benchmark_latency} reports the corresponding wall-clock latency: $11.4\ms$ for random search, $2.3\ms$ for\gls{CEM}, and $0.37\ms$ for the learned policy ($31.0\times$ and $6.2\times$ faster, respectively). Despite the much larger gap in required samples, the wall-clock cost of random search and\gls{CEM} barely changes: at this array size the fixed per-batch overhead of the validator dominates over the cost of evaluating the additional elements, so the dimensionality penalty shows up almost entirely in the number of attempts needed rather than in the time per attempt.
 
 \begin{figure}[htbp]
     \centering
@@ -693,12 +793,13 @@ Following the same protocol as \sectionname~\ref{sec:benchmark},\figurename~\ref
 \FloatBarrier
 
 \subsubsection{Effect of array size on search cost}
+\label{subsec:search_cost_n5_vs_n8}
 
-\figurename~\ref{fig:benchmark_n5_vs_n8_efficiency} and\figurename~\ref{fig:benchmark_n5_vs_n8_latency} overlay the $N=5$ and $N=8$ benchmarks directly, isolating the effect of training with, and searching over, a larger array. The\gls{PPO} model's inference cost is essentially insensitive to array size: median latency grows by only $6\%$ ($0.35\to0.37\ms$) as $N$ grows by $60\%$, because the policy always proposes a configuration in a single forward pass regardless of the dimensionality of the action space. Random search and\gls{CEM}, in contrast, must search a phase space whose feasible volume shrinks multiplicatively with each additional element: the\gls{PPO} model's sample-efficiency advantage widens from $17\times$ over random search and $15\times$ over\gls{CEM} at $N=5$ to $108\times$ and $96\times$ respectively at $N=8$. This divergence, constant-cost inference for the learned policy versus search effort, is the central practical argument for the proposed approach: as the system scales to larger arrays, where the constraint-satisfying region becomes proportionally harder to reach by blind or population-based search, the advantage of\gls{PPO} only widens.
+\figurename~\ref{fig:benchmark_n5_vs_n8_efficiency} and \figurename~\ref{fig:benchmark_n5_vs_n8_latency} overlay the $N=5$ and $N=8$ benchmarks directly, isolating the effect of training with, and searching over, a larger array. The\gls{PPO} model's inference cost is essentially insensitive to array size: median latency grows by only $6\%$ ($0.35\to0.37\ms$) as $N$ grows by $60\%$, because the policy always proposes a configuration in a single forward pass regardless of the dimensionality of the action space. Random search and\gls{CEM}, in contrast, must search a phase space whose feasible volume shrinks multiplicatively with each additional element: the\gls{PPO} model's sample-efficiency advantage widens from $17\times$ over random search and $15\times$ over\gls{CEM} at $N=5$ to $108\times$ and $96\times$ respectively at $N=8$. The divergence between constant-cost inference for the learned policy and search effort is the central practical argument for the proposed approach: as the system scales to larger arrays, where the constraint-satisfying region becomes proportionally harder to reach by blind or population-based search, the advantage of\gls{PPO} only widens.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.8\textwidth]{images/chapter5/benchmark_efficiency_n5_vs_n8.pdf}
+    \includegraphics[width=0.6\textwidth]{images/chapter5/benchmark_efficiency_n5_vs_n8.pdf}
     \caption{Sample efficiency for \acs{PPO} model, \acs{CEM}, and random search across $N=5$ and $N=8$ \acs{ULA}s: number of tries to find a valid configuration. Color encodes method, shade encodes array size (dark = $N=5$, light = $N=8$); solid lines show the median number of tries and shaded bands show the 25th-75th percentile range of the number of tries across independent repetitions at each angle.}
     \label{fig:benchmark_n5_vs_n8_efficiency}
 \end{figure}
