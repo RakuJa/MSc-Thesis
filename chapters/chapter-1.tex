@@ -10,6 +10,38 @@
 %**************************************************************
 \section{Directional modulation demand}
 
+\textcolor{ForestGreen}{GB: I checked all points, and most of them are solved. Only a few final remarks:\\
+- Fig. 4.6: since $B_{e,\min}$ has been defined some time ago (page 24), I would add it at the end of the first sentence of Sect. 4.2.5: ``the minimum BER of all possible eavesdropper angles $B_{e,\min}$''. The same for the legitimate user BER and the secrecy BER, if you used a symbol for them.\\
+- Since Figs. 4.16 and 4.10 (that you mention to justify the potentially odd behavior of Fig. 4.6) come at a later stage, I would say: ``not an artifact of incomplete convergence, as will be discussed in Section 4.3'', and remove the next sentence, from ``Figure 4.16 examines'' to ``it does not'' (you could use these sentences later one when commenting the figures, if needed);\\
+- Fig. 4.19(b): I still don't see the shaded regions, I don't know if it's a problem of the pdf reader I'm using;\\
+\\
+Minor comments:\\
+- page 43: please arrange the position of the figures so as to avoid the empty half page;\\
+- caption of Fig. 4.40: ``dark ='' -> ``dark:'', ``light ='' -> ``light:'';\\
+- page 71, third bullet: ``Uniform Planar Array'' should be ``Uniform planar array'';\\
+- page 71, third bullet: use \texttt{Gls\{MARL\}} to get the first letter to be capital;\\
+- page 71, last bullet: ``Figure'' should be ``Figures'' (you could define \texttt{figuresname} as ``Figures'');\\
+- I would also add the following two references when introducing DDM (see commented text below for the .bib entries):\\
+  - V. Pellegrini, F. Principe, G. de Mauro, R. Guidi, V. Martorelli, and R. Cioni, “Cryptographically secure radios based on directional modulation,” in Proc. IEEE Intl. Conf. Acoustics, Speech and Signal Process. (ICASSP), Florence, Italy, 2014.\\
+  - V. Pellegrini, F. Principe, R. Guidi, G. Scozza, and G. de Mauro, “Adding PHY-layer crypto to COFDM radios through a large array with directional modulation,” in Proc. IEEE Global Commun. Conf. (GLOBECOM), Abu Dhabi, United Arab Emirates, 2018.
+}
+  % @inproceedings{pellegrini_2014,
+  %   author    = {V. Pellegrini and F. Principe and G. {de Mauro} and R. Guidi and V. Martorelli and R. Cioni},
+  %   title     = {Cryptographically secure radios based on directional modulation},
+  %   booktitle = {Proc. IEEE Intl. Conf. Acoustics, Speech and Signal Process. (ICASSP)},
+  %   address   = {Florence, Italy},
+  %   year      = {2014}
+  % }
+
+  % @inproceedings{pellegrini_2018,
+  %   author    = {V. Pellegrini and F. Principe and R. Guidi and G. Scozza and G. {de Mauro}},
+  %   title     = {Adding {PHY}-Layer Crypto to {COFDM} Radios through a Large Array with Directional Modulation},
+  %   booktitle = {Proc. IEEE Global Commun. Conf. (GLOBECOM)},
+  %   address   = {Abu Dhabi, United Arab Emirates},
+  %   year      = {2018}
+  % }
+
+
 Due to the broadcast nature of wireless communication channels, ensuring confidentiality and integrity is a fundamental challenge. Traditionally, the majority of security guarantees are implemented through cryptographic-based mechanisms in the upper layers of transmission. However,\gls{PLS}\cite{physec} has emerged as a complementary approach that exploits the inherent characteristics of the wireless channel between a legitimate transmitter (Alice) and the legitimate receiver (Bob) to secure the transmission.\gls{DM} is a\gls{PLS} technique that utilizes the spatial characteristics of the legitimate wireless channel such that a signal sent in a desired direction will be correctly demodulated only along a desired spatial direction while appearing disrupted in all other directions.\\
 \\
 There are important use cases that require\gls{DM} to function, such as:
@@ -24,7 +56,7 @@ Conventional (static)\gls{DM} schemes are vulnerable to advanced eavesdropping s
 
 Directional modulation originated as a phased-array technique, first formalized with phase configurations computed directly for single-direction transmission and via a genetic algorithm for the harder multi-directional case \cite{daly2009dm}, and later demonstrated in hardware \cite{daly2010demo}. Subsequent work shifted toward closed-form and optimization-based synthesis, including vector-based \cite{ding2014vector} and orthogonal-vector, artificial-noise-informed \cite{ding2015orthogonal} approaches capable of synthesizing multi-beam transmitters that serve several legitimate directions simultaneously; see \cite{ding2016review} for a broader review of this line of work. The vector-based approach \cite{ding2014vector} is purely static, with no per-symbol randomization. The orthogonal-vector method \cite{ding2015orthogonal} does randomize per symbol, but only within the null space of the target direction: the signal-carrying component is identical at every symbol and must be re-solved whenever the target direction changes; this differs from the\gls{DDM} implementations described below \cite{cabrerahernandez2019sdr,cabrerahernandez2019vm,goriasilva2023lpddm}, where the complete physical excitation of the array varies per symbol.\\
 \\
-\gls{DDM} itself - varying the array configuration over time rather than fixing it once at design time - has also been explored, but predominantly through simple, non-learned randomization. Hardware implementations have realized\gls{DDM} via software-defined radio \cite{cabrerahernandez2019sdr} and vector-modulator architectures \cite{cabrerahernandez2019vm}, while \cite{goriasilva2023lpddm} shows that a low-power\gls{DDM} variant based on randomly switching the transmitting antenna element leaks exploitable information to an eavesdropper. In all three, the randomization rule is pre-computed offline and fixed during transmission, rather than generated by a learned policy that generalizes across target directions and jointly shapes per-symbol diversity for beamforming quality and secrecy.\\
+\gls{DDM} itself, varying the array configuration over time rather than fixing it once at design time, has also been explored, but predominantly through simple, non-learned randomization. Hardware implementations have realized\gls{DDM} via software-defined radio \cite{cabrerahernandez2019sdr} and vector-modulator architectures \cite{cabrerahernandez2019vm}, while \cite{goriasilva2023lpddm} shows that a low-power\gls{DDM} variant based on randomly switching the transmitting antenna element leaks exploitable information to an eavesdropper. In all three, the randomization rule is pre-computed offline and fixed during transmission, rather than generated by a learned policy that generalizes across target directions and jointly shapes per-symbol diversity for beamforming quality and secrecy.\\
 \\
 Having explored the growing demand for dynamic directional modulation, we also analyzed the current literature on\gls{AI}-assisted\gls{DM}. This survey \cite{chen2025survey} highlights the scarcity of research on the integration of\gls{AI} techniques into\gls{DM} systems and the need for more computationally efficient\gls{DDM} systems. Similar\gls{RL} approaches have been explored \cite{li2026rlris} successfully for\gls{DM}, however they do not explore the feasibility of\gls{RL} applied to\gls{DDM} systems. To the best of our knowledge, a\gls{RL} approach to\gls{DDM} has not been studied before: as discussed above, none of the existing\gls{DM} or\gls{DDM} works learns a policy for this specific problem, namely producing a fresh, stochastic per-symbol array excitation toward a fixed legitimate direction, learned through a reward signal rather than fixed by construction. \\
 \\
@@ -35,6 +67,6 @@ This thesis will examine first the issue of dynamic and static directional modul
 \begin{itemize}
 	\item \textbf{Chapter 2:} will introduce the main theoretical concepts of telecommunication and\gls{AI} model training;
 	\item \textbf{Chapter 3:} will describe the tools utilized to train the model, the implementation details, and the parameters chosen;
-	\item \textbf{Chapter 4:} will explain the methods used to validate the model and present and analyze the experimental results;
-	\item \textbf{Chapter 5:} will contain the conclusions of this work, along with possible improvements and generalizations that can be introduced in the future.
+	\item \textbf{Chapter 4:} will explain the methods used to validate the model, present and analyze the experimental results;
+	\item \textbf{Chapter 5:} will contain the conclusions of this work, along with possible improvements  that can be introduced in the future.
 \end{itemize}
