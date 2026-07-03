@@ -263,7 +263,7 @@ As visualized in \figurename~\ref{fig:training_losses}, the policy gradient, val
 
 \subsection{Secrecy Performance}
 
-\figurename~\ref{fig:secrecy_performance} tracks the\gls{BER} metrics throughout training on a logarithmic scale: the legitimate user\gls{BER}, the secrecy\gls{BER} and the minimum\gls{BER} of all possible eavesdropper angles. These curves reflect how well the agent is learning the physical-layer security objective: driving the legitimate\gls{BER} below the target threshold while maintaining a high eavesdropper\gls{BER}.
+\figurename~\ref{fig:secrecy_performance} tracks the\gls{BER} metrics throughout training on a logarithmic scale: the legitimate user\gls{BER} $B_{\text{legit}}$, the secrecy\gls{BER} $\bar{B}_e$ and the minimum\gls{BER} of all possible eavesdropper angles $B_{e,\min}$. These curves reflect how well the agent is learning the physical-layer security objective: driving the legitimate\gls{BER} below the target threshold while maintaining a high eavesdropper\gls{BER}.
 
 \begin{figure}[htbp]
     \centering
@@ -272,7 +272,7 @@ As visualized in \figurename~\ref{fig:training_losses}, the policy gradient, val
     \label{fig:secrecy_performance}
 \end{figure}
 
-The minimum\gls{BER} curve settles at $0.0103$, below both the legitimate\gls{BER} ($0.0368$) and the $0.05$ target. This is not a training shortfall: $B_{e,\min}$ is, by definition, the easiest-to-decode angle across the \emph{entire} trained angular range, and with only $N=5$ complex degrees of freedom the array cannot keep the phase misaligned from the legitimate direction at every point of a continuum of eavesdropper angles. As $\varphi_e$ is swept, the array factor's phase necessarily wraps through every value multiple times, so some sidelobe will always land back close enough to the legitimate phase to be easily decoded; this is a structural limitation of any finite-aperture beamformer, not an artifact of incomplete convergence. \figurename~\ref{fig:eve_weak_angle_evolution} examines whether this worst-case angle at least relocates between stochastic draws, the way the deep null of \figurename~\ref{fig:model_beam_pattern_evolution} does, so that a fixed-position eavesdropper could not reliably exploit it, and shows that, empirically, it does not. Closing this gap, rather than only relocating it, would require additional spatial degrees of freedom dedicated explicitly to secrecy, such as the orthogonal-vector and artificial-noise-informed methods of \cite{ding2015orthogonal} discussed in \chaptername~\ref{cap:introduction} (\sectionname~\ref{cap:future_works}).
+The minimum\gls{BER} curve settles at $0.0103$, below both the legitimate\gls{BER} ($0.0368$) and the $0.05$ target. This is not a training shortfall: $B_{e,\min}$ is, by definition, the easiest-to-decode angle across the \emph{entire} trained angular range, and with only $N=5$ complex degrees of freedom the array cannot keep the phase misaligned from the legitimate direction at every point of a continuum of eavesdropper angles. As $\varphi_e$ is swept, the array factor's phase necessarily wraps through every value multiple times, so some sidelobe will always land back close enough to the legitimate phase to be easily decoded; this is a structural limitation of any finite-aperture beamformer, not an artifact of incomplete convergence, as will be discussed in \sectionname~\ref{sec:inference_results}. Closing this gap, rather than only relocating it, would require additional spatial degrees of freedom dedicated explicitly to secrecy, such as the orthogonal-vector and artificial-noise-informed methods of \cite{ding2015orthogonal} discussed in \chaptername~\ref{cap:introduction} (\sectionname~\ref{cap:future_works}).
 \FloatBarrier
 \subsection{Constraint Satisfaction}
 
@@ -300,6 +300,7 @@ The minimum\gls{BER} curve settles at $0.0103$, below both the legitimate\gls{BE
 
 %**************************************************************
 \section{Inference results}
+\label{sec:inference_results}
 \subsubsection{Beam pattern}
 
 \figurename~\ref{fig:model_beam_pattern} presents the beam patterns obtained at inference for three representative target angles: $\varphi^\star \in \{-60\degree, 0\degree, 60\degree\}$, as described in the plot legend. In each case the solid line corresponds to the deterministic solution (\texttt{deterministic=True}), representing the policy mean $\mu_\theta(\varphi^\star)$. All three deterministic beams exhibit a well-defined principal lobe with its peak precisely aligned to the desired angle, confirming that the policy has learned to map each target direction to a valid, high-quality beamforming configuration. \\
@@ -434,7 +435,7 @@ For each azimuth angle $\varphi \in [-90\degree, 90\degree]$, all three methods 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.8\textwidth]{images/chapter5/benchmark_efficiency.pdf}
-    \caption{Sample efficiency comparison between \acs{PPO} model, \acs{CEM}, and random search: number of tries to find a valid configuration (left) and success rate across angles (right). In the left panel, solid lines show the median number of tries and shaded bands show the 25th-75th percentile range of the number of tries across independent repetitions at each angle; in the right panel, shaded regions show the cumulative failure fraction for each method.}
+    \caption{Sample efficiency comparison between \acs{PPO} model, \acs{CEM}, and random search: number of tries to find a valid configuration (left) and success rate across angles (right). In the left panel, solid lines show the median number of tries and shaded bands show the 25th-75th percentile range of the number of tries across independent repetitions at each angle; in the right panel, shaded regions denote the cumulative failure fraction for each method, which is uniformly zero here since all three methods reach $100\%$ success at every angle.}
     \label{fig:benchmark_efficiency}
 \end{figure}
 \FloatBarrier
@@ -602,7 +603,7 @@ The training dynamics are stable and broadly similar to the baseline while the e
     \label{fig:physics_informed_training}
 \end{figure}
 
-As in the baseline (\figurename~\ref{fig:secrecy_performance}), the minimum\gls{BER} curve in \figurename~\ref{fig:physics_informed_training_ber} settles below the legitimate\gls{BER} and the $0.05$ target ($0.0012$ against $0.0151$); the same finite-degrees-of-freedom argument applies, and is in fact tighter here since the $\pm\frac{\pi}{4}$ perturbation bound further restricts the set of distinguishable sidelobe structures available to the policy.
+As in the baseline (\figurename~\ref{fig:secrecy_performance}), the minimum\gls{BER} curve $B_{e,\min}$ in \figurename~\ref{fig:physics_informed_training_ber} settles below the legitimate\gls{BER} $B_{\text{legit}}$ and the $0.05$ target ($0.0012$ against $0.0151$); the same finite-degrees-of-freedom argument applies, and is in fact tighter here since the $\pm\frac{\pi}{4}$ perturbation bound further restricts the set of distinguishable sidelobe structures available to the policy.
 
 The entropy loss in \figurename~\ref{fig:physics_informed_training_losses} makes this restriction visible already during training, well before the diversity analysis below confirms it at inference time: it crosses from negative to positive earlier than the baseline ($\approx 4\times10^6$ timesteps against $\approx 7\times10^6$, \subsectionname~\ref{sec:training_dynamics_baseline_losses}) and settles at a substantially higher final value ($\approx +4$ against $\approx +0.7$). A higher entropy loss means lower policy entropy, i.e.\ a more concentrated action distribution, so the policy commits to a narrower set of configurations sooner and more strongly than the baseline does -- the training-time fingerprint of the higher duplicate rate that \figurename~\ref{fig:diversity_analysis_physics_informed} reports below. The remaining diagnostics in \figurename~\ref{fig:physics_informed_ppo_diagnostics} stay close to the baseline's values ($\mathrm{KL}\approx0.03\text{--}0.04$, clip fraction $\approx0.30$, explained variance $\approx0.85$), indicating that this reduced diversity is a deliberate, stable consequence of the constrained action space rather than a sign of training instability.
 
@@ -776,7 +777,7 @@ Following the same protocol as \sectionname~\ref{sec:benchmark}, \figurename~\re
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.8\textwidth]{images/chapter5/ula8/benchmark_efficiency.pdf}
-    \caption{Sample efficiency comparison between \acs{PPO} model, \acs{CEM}, and random search for the $N=8$ \acs{ULA}: number of tries to find a valid configuration (left) and success rate across angles (right). In the left panel, solid lines show the median number of tries and shaded bands show the 25th--75th percentile range of the number of tries across independent repetitions at each angle; in the right panel, shaded regions show the cumulative failure fraction for each method.}
+    \caption{Sample efficiency comparison between \acs{PPO} model, \acs{CEM}, and random search for the $N=8$ \acs{ULA}: number of tries to find a valid configuration (left) and success rate across angles (right). In the left panel, solid lines show the median number of tries and shaded bands show the 25th--75th percentile range of the number of tries across independent repetitions at each angle; in the right panel, shaded regions denote the cumulative failure fraction for each method, which is uniformly zero here since all three methods reach $100\%$ success at every angle.}
     \label{fig:ula8_benchmark_efficiency}
 \end{figure}
 \FloatBarrier
@@ -799,7 +800,7 @@ Following the same protocol as \sectionname~\ref{sec:benchmark}, \figurename~\re
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.6\textwidth]{images/chapter5/benchmark_efficiency_n5_vs_n8.pdf}
-    \caption{Sample efficiency for \acs{PPO} model, \acs{CEM}, and random search across $N=5$ and $N=8$ \acsp{ULA}: number of tries to find a valid configuration. Color encodes method, shade encodes array size (dark =($N=5$), light =($N=8$)); solid lines show the median number of tries and shaded bands show the 25th-75th percentile range of the number of tries across independent repetitions at each angle.}
+    \caption{Sample efficiency for \acs{PPO} model, \acs{CEM}, and random search across $N=5$ and $N=8$ \acsp{ULA}: number of tries to find a valid configuration. Color encodes method, shade encodes array size (dark: $N=5$, light: $N=8$); solid lines show the median number of tries and shaded bands show the 25th-75th percentile range of the number of tries across independent repetitions at each angle.}
     \label{fig:benchmark_n5_vs_n8_efficiency}
 \end{figure}
 \FloatBarrier
@@ -807,7 +808,7 @@ Following the same protocol as \sectionname~\ref{sec:benchmark}, \figurename~\re
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.6\textwidth]{images/chapter5/benchmark_latency_n5_vs_n8.pdf}
-    \caption{Total latency (ms) to find a valid beamforming configuration for \acs{PPO} model, \acs{CEM}, and random search across $N=5$ and $N=8$ \acs{ULA}s. Color encodes method, shade encodes array size (dark =($N=5$), light =($N=8$)); solid lines show the median latency and shaded bands show the 25th-75th percentile range of the latency across independent repetitions at each angle.}
+    \caption{Total latency (ms) to find a valid beamforming configuration for \acs{PPO} model, \acs{CEM}, and random search across $N=5$ and $N=8$ \acs{ULA}s. Color encodes method, shade encodes array size (dark: $N=5$, light: $N=8$); solid lines show the median latency and shaded bands show the 25th-75th percentile range of the latency across independent repetitions at each angle.}
     \label{fig:benchmark_n5_vs_n8_latency}
 \end{figure}
 \FloatBarrier
